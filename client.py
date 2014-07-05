@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import os
+import hashlib
 
 import requests
 
@@ -14,12 +15,21 @@ URL_DOWNLOAD = 'http://' + HOST + ':' + PORT + '/download/' + FILE
 URL_UPLOAD = 'http://' + HOST + ':' + PORT + '/upload/' + FILE
 
 
+def md5():
+    with open(FILE, "rb") as file:
+        data = file.read()
+        md5_sum = hashlib.md5(data).hexdigest()
+        print(md5_sum)
+        return md5_sum
+
+
 def upload():
     if os.path.isfile(FILE):
-        r = requests.post(URL_UPLOAD, data=open(FILE, "rb").read())
+        data = open(FILE, "rb").read()
+        headers = {'Content-Type': 'application/bin', 'MD5': md5()}
+        r = requests.post(URL_UPLOAD, data, headers=headers)
         if r.status_code == 200:
             print("OK")
-
         else:
             print("ERROR: ", r.status_code)
     else:
@@ -31,7 +41,7 @@ def download():
     r = requests.get(URL_DOWNLOAD)
     if r.status_code == '200':
         with open(FILE, 'wb') as f:
-            for chunk in r.content(1024):
+            for chunk in r.content(4096):
                 f.write(chunk)
     else:
         print("server error, exiting...")

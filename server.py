@@ -5,7 +5,6 @@ import os
 import tornado.ioloop
 import tornado.web
 
-
 Dir = '/home/rusik/PycharmProjects/blah/data/'
 
 
@@ -20,7 +19,7 @@ class DownloadHandler(tornado.web.RequestHandler):
 class UploadHandler(tornado.web.RequestHandler):
     def post(self, filename):
         with open(Dir + filename, 'wb') as f:
-            print(self.request.body)
+            # print(self.request.body)
             f.write(self.request.body)
             # f.write(data)
         self.finish()
@@ -40,8 +39,6 @@ application = tornado.web.Application([
     (r"/upload/(.*)", UploadHandler),
     (r"/info/(.*)", InfoHandler)
 ])
-
-App_Settings = {"debug": True}
 
 if __name__ == '__main__':
     application.listen(8080)
