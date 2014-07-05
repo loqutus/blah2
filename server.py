@@ -21,6 +21,7 @@ class UploadHandler(tornado.web.RequestHandler):
     def post(self, filename):
         with open(Dir + filename, 'wb') as f:
             print(self.request.body)
+            f.write(self.request.body)
             # f.write(data)
         self.finish()
 
