@@ -14,12 +14,15 @@ class DownloadHandler(tornado.web.RequestHandler):
         with open(Dir + filename, 'rb') as f:
             self.write(f.read())
             f.close()
+        self.finish()
 
 
 class UploadHandler(tornado.web.RequestHandler):
     def post(self, filename):
         with open(Dir + filename, 'wb') as f:
-            f.write(self.request.body)
+            print(self.request.body)
+            # f.write(data)
+        self.finish()
 
 
 class InfoHandler(tornado.web.RequestHandler):
@@ -28,6 +31,7 @@ class InfoHandler(tornado.web.RequestHandler):
             self.write("1")
         else:
             self.write("0")
+        self.finish()
 
 
 application = tornado.web.Application([
@@ -35,6 +39,8 @@ application = tornado.web.Application([
     (r"/upload/(.*)", UploadHandler),
     (r"/info/(.*)", InfoHandler)
 ])
+
+App_Settings = {"debug": True}
 
 if __name__ == '__main__':
     application.listen(8080)
