@@ -45,10 +45,21 @@ class UploadHandler(tornado.web.RequestHandler):
 
 class InfoHandler(tornado.web.RequestHandler):
     def get(self, filename):
-        if os.path.isfile(Dir + filename):
-            self.write("1")
+        filepath = Dir + filename
+        if os.path.isfile(filepath):
+            isfile = '1'
+            file_txt = open(filepath + ".txt", 'r')
+            file_read = file_txt.read()
+            if file_read == md5sum(filepath):
+                md5_correct = '1'
+            else:
+                md5_correct = '0'
         else:
-            self.write("0")
+            isfile = '0'
+        if isfile == '1' and md5_correct == '1':
+            self.set_status(200, 'OK')
+        else:
+            self.set_status(500, 'server error')
         self.finish()
 
 
