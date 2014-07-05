@@ -7,8 +7,9 @@ import tornado.ioloop
 import tornado.web
 import tornado.httputil
 
+from settings import *
 
-Dir = '/home/rusik/PycharmProjects/blah/data/'
+
 global file_read
 
 
@@ -22,7 +23,7 @@ def md5sum(filename):
 
 class DownloadHandler(tornado.web.RequestHandler):
     def get(self, filename):
-        with open(Dir + filename, 'rb') as f:
+        with open(DIR1 + filename, 'rb') as f:
             self.write(f.read())
             f.close()
         self.finish()
@@ -30,7 +31,7 @@ class DownloadHandler(tornado.web.RequestHandler):
 
 class UploadHandler(tornado.web.RequestHandler):
     def post(self, filename):
-        file = Dir + filename
+        file = DIR1 + filename
         with open(file, 'wb') as f:
             f.write(self.request.body)
         md5 = self.request.headers.get('MD5')
@@ -38,6 +39,7 @@ class UploadHandler(tornado.web.RequestHandler):
         if md5 == md5sum(file):
             m = open(file + '.txt', 'w')
             m.write(md5)
+
             self.set_status(200, 'OK')
         else:
             os.remove(file)
@@ -47,7 +49,7 @@ class UploadHandler(tornado.web.RequestHandler):
 
 class InfoHandler(tornado.web.RequestHandler):
     def get(self, filename):
-        filepath = Dir + filename
+        filepath = DIR1 + filename
         if os.path.isfile(filepath):
             isfile = '1'
             file_txt = open(filepath + ".txt", 'r')
@@ -74,5 +76,5 @@ application = tornado.web.Application([
 ])
 
 if __name__ == '__main__':
-    application.listen(8080)
+    application.listen(PORT1)
     tornado.ioloop.IOLoop.instance().start()

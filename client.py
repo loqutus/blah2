@@ -33,6 +33,7 @@ def upload():
             print("OK")
         else:
             print("ERROR: ", r.status_code)
+            exit(1)
     else:
         print("no such file, exiting...")
         exit(1)
