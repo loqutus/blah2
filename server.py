@@ -1,11 +1,21 @@
 #!/usr/bin/env python3
 
 import os
+import hashlib
 
 import tornado.ioloop
 import tornado.web
 
+
 Dir = '/home/rusik/PycharmProjects/blah/data/'
+
+
+def md5sum(filename):
+    with open(filename, "rb") as file:
+        data = file.read()
+        md5_sum = hashlib.md5(data).hexdigest()
+        print(md5_sum)
+        return md5_sum
 
 
 class DownloadHandler(tornado.web.RequestHandler):
@@ -18,10 +28,18 @@ class DownloadHandler(tornado.web.RequestHandler):
 
 class UploadHandler(tornado.web.RequestHandler):
     def post(self, filename):
-        with open(Dir + filename, 'wb') as f:
-            # print(self.request.body)
+        file = Dir + filename
+        with open(file, 'wb') as f:
             f.write(self.request.body)
-            # f.write(data)
+        md5 = self.request.headers.get('MD5')
+        print(self.request.headers.get('MD5'))
+        if md5 == md5sum(file):
+            m = open(file + '.txt', 'w')
+            m.write(md5)
+            self.set_status(200, 'OK')
+        else:
+            os.remove(file)
+            self.set_status(500, 'md5 mismatch')
         self.finish()
 
 
