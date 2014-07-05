@@ -5,9 +5,11 @@ import hashlib
 
 import tornado.ioloop
 import tornado.web
+import tornado.httputil
 
 
 Dir = '/home/rusik/PycharmProjects/blah/data/'
+global file_read
 
 
 def md5sum(filename):
@@ -57,8 +59,10 @@ class InfoHandler(tornado.web.RequestHandler):
         else:
             isfile = '0'
         if isfile == '1' and md5_correct == '1':
+            self.write('ISFILE: ' + str(isfile) + ' NAME: ' + filename + ' MD5: ' + file_read)
             self.set_status(200, 'OK')
         else:
+            self.write('ISFILE: ' + str(isfile))
             self.set_status(500, 'server error')
         self.finish()
 

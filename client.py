@@ -40,6 +40,8 @@ def upload():
 
 def info():
     r = requests.get(URL_INFO)
+    print(r.content.decode("ascii"))
+
     if r.status_code == 200:
         print("OK")
     else:
