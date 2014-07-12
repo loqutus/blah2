@@ -8,8 +8,8 @@ import requests
 
 ACTION = sys.argv[1]
 FILE = sys.argv[2]
-HOST = 'localhost'
-PORT = '8080'
+HOST = sys.argv[3].split(":")[0]
+PORT = sys.argv[3].split(":")[1]
 
 URL_DOWNLOAD = 'http://' + HOST + ':' + PORT + '/download/' + FILE
 URL_UPLOAD = 'http://' + HOST + ':' + PORT + '/upload/' + FILE
@@ -55,6 +55,14 @@ def download():
         with open(FILE, 'wb') as f:
             for chunk in r.content(4096):
                 f.write(chunk)
+    else:
+        print("ERROR", r.status_code)
+    print (r.headers)
+    if r.headers['md5'] == md5():
+        print("OK")
+        exit
+        0
+
     else:
         print("server error, exiting...")
         exit(1)
