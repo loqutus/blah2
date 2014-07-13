@@ -3,6 +3,8 @@
 import os
 import sys
 import hashlib
+import logging
+import ipdb
 
 import requests
 import tornado.ioloop
@@ -24,6 +26,7 @@ if SERVER_ID == '1':
     HOST = settings.HOST1
     PORT = settings.PORT1
     DIR = settings.DIR1
+    LOG = settings.LOG1
 elif SERVER_ID == '2':
     HOST1 = settings.HOST1
     HOST2 = settings.HOST3
@@ -32,6 +35,7 @@ elif SERVER_ID == '2':
     HOST = settings.HOST2
     PORT = settings.PORT2
     DIR = settings.DIR2
+    LOG = settings.LOG2
 elif SERVER_ID == '3':
     HOST1 = settings.HOST1
     HOST2 = settings.HOST2
@@ -40,25 +44,34 @@ elif SERVER_ID == '3':
     HOST = settings.HOST3
     PORT = settings.PORT3
     DIR = settings.DIR3
+    LOG = settings.LOG3
 else:
     print("Wrong host id, exiting...")
     exit(1)
+
+logging.basicConfig(filename=LOG, level=logging.DEBUG)
+ch = logging.StreamHandler(sys.stdout)
+logging.debug("starting server " + HOST + ":" + str(PORT))
 
 
 def ask_host(filename, host):
     if host == 1:
         host = HOST1
         port = PORT1
+        logging.debug('ask_HOST1')
     elif host == 2:
         host = HOST2
         port = PORT2
-    request_response = requests.get('http://' + host + ':' + str(port) + '/info/' + filename)
-    request = request_response.content.decode('ascii')
-    print(request.split())
+        logging.debug('ask_HOST2')
+    url = 'http://' + host + ':' + str(port) + '/info/' + filename
+    request_response = requests.get(url)
+    logging.debug('request_response: ' + str(request_response.status_code))
     if request_response.status_code == 200:
-        return request.split()[5]
-    else:
         return 0
+    elif request_response.status_code == 404:
+        return 1
+    else:
+        return 1
 
 
 def upload(filename, content, md5, host_id):
@@ -68,13 +81,15 @@ def upload(filename, content, md5, host_id):
     elif host_id == 2:
         host = HOST2
         port = PORT2
-    headers = {'Content-Type': 'application/bin', 'MD5': md5}
+    # ipdb.set_trace()
+    headers = {'content-type': 'application/bin', 'md5': md5, "client": '0'}
     url_upload = "http://" + host + ":" + str(port) + '/upload/' + filename
     r = requests.post(url_upload, content, headers=headers)
+    logging.debug("upload: " + str(r.status_code))
     if r.status_code == 200:
-        print("OK")
+        logging.debug("OK")
     else:
-        print("ERROR: ", r.status_code)
+        logging.debug("ERROR: " + str(r.status_code))
         exit(1)
 
 
@@ -82,7 +97,7 @@ def md5sum(filename):
     with open(filename, "rb") as file:
         data = file.read()
     md5_sum = hashlib.md5(data).hexdigest()
-    print(md5_sum)
+    # logging.debug('md5sum: ', str(md5_sum))
     return md5_sum
 
 
@@ -93,7 +108,7 @@ class DownloadHandler(tornado.web.RequestHandler):
             f.close()
         f = open(DIR + filename + '.txt', 'r')
         md5 = f.read()
-        self.set_header('MD5', md5)
+        self.set_header('md5', md5)
         self.finish()
 
 
@@ -102,19 +117,26 @@ class UploadHandler(tornado.web.RequestHandler):
         file = DIR + filename
         with open(file, 'wb') as f:
             f.write(self.request.body)
-        md5 = self.request.headers.get('MD5')
-        print(self.request.headers.get('MD5'))
+        f.close()
+        md5 = self.request.headers.get('md5')
+        client = self.request.headers.get('client')
+        logging.debug('Client: ' + str(client))
+        logging.debug('MD5: ' + md5)
         if md5 == md5sum(file):
             m = open(file + '.txt', 'w')
             m.write(md5)
-            # if ask_host(filename, 2) == 0:
-            print(ask_host(filename, 1))
-            print(ask_host(filename, 2))
-
-            if ask_host(filename, 1) == 0:
-                upload(filename, self.request.body, md5, 1)
-            if ask_host(filename, 2) == 0:
-                upload(filename, self.request.body, md5, 2)
+            logging.debug('ask_host1: ' + str(ask_host(filename, 1)))
+            logging.debug('ask_host2: ' + str(ask_host(filename, 2)))
+            logging.debug("client: " + str(client))
+            if client == '1':
+                if ask_host(filename, 1) == 1:
+                    logging.debug("upload1")
+                    upload(filename, self.request.body, md5, 1)
+                    logging.debug("upload1_finish")
+                if ask_host(filename, 2) == 1:
+                    logging.debug("upload2")
+                    upload(filename, self.request.body, md5, 2)
+                    logging.debug("upload2_finish")
             self.set_status(200, 'OK')
         else:
             os.remove(file)
@@ -126,30 +148,40 @@ class InfoHandler(tornado.web.RequestHandler):
     def get(self, filename):
         filepath = DIR + filename
         if os.path.isfile(filepath):
-            isfile = '1'
+            isfile = 1
             file_txt = open(filepath + ".txt", 'r')
-            file_read = file_txt.read()
-            if file_read == md5sum(filepath):
-                md5_correct = '1'
+            file_txt_read = file_txt.read()
+            if file_txt_read == md5sum(filepath):
+                md5_correct = 1
             else:
-                md5_correct = '0'
+                md5_correct = 0
         else:
-            isfile = '0'
-        if isfile == '1' and md5_correct == '1':
-            self.write('ISFILE: ' + str(isfile) + ' NAME: ' + filename + ' MD5: ' + file_read)
+            isfile = 0
+        if isfile == 1 and md5_correct == 1:
+            self.write('ISFILE: ' + str(isfile) + ' NAME: ' + \
+                       filename + ' MD5: ' + file_txt_read)
             self.set_status(200, 'OK')
         else:
-            self.write('ISFILE: ' + str(isfile))
-            self.set_status(500, 'server error')
+            self.write(filename + 'file not found')
+            self.set_status(404, 'file not found')
         self.finish()
+
+
+class StopHandler(tornado.web.RequestHandler):
+    def get(self):
+        logging.debug('exiting...')
+        tornado.ioloop.IOLoop.instance().stop()
 
 
 application = tornado.web.Application([
     (r"/download/(.*)", DownloadHandler),
     (r"/upload/(.*)", UploadHandler),
-    (r"/info/(.*)", InfoHandler)
+    (r"/info/(.*)", InfoHandler),
+    (r"/stop/", StopHandler)
 ])
 
 if __name__ == '__main__':
+    logging.debug('main starting...')
     application.listen(PORT)
     tornado.ioloop.IOLoop.instance().start()
+    logging.debug('main finished')
