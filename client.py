@@ -3,7 +3,7 @@ import sys
 import os
 import hashlib
 import logging
-import ipdb
+import socket
 
 import requests
 
@@ -88,13 +88,19 @@ def download():
 
 
 def stop():
+    try:
+        s = socket.socket()
+        s.connect(HOST, PORT)
+    except Exception:
+        logging.debug('server is not running...')
+        exit(1)
     r = requests.get(URL_STOP)
     if r.status_code == 200:
         logging.debug('server stopped')
-        return 0
+        exit(0)
     else:
         logging.debug('server still running...')
-        return 1
+        exit(1)
 
 
 if __name__ == '__main__':

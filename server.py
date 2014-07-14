@@ -55,6 +55,7 @@ logging.debug("starting server " + HOST + ":" + str(PORT))
 
 
 def ask_host(filename, host):
+    logging.debug('ask_host')
     if host == 1:
         host = HOST1
         port = PORT1
@@ -75,6 +76,7 @@ def ask_host(filename, host):
 
 
 def upload(filename, content, md5, host_id):
+    logging.debug('upload')
     if host_id == 1:
         host = HOST1
         port = PORT1
@@ -94,6 +96,7 @@ def upload(filename, content, md5, host_id):
 
 
 def md5sum(filename):
+    logging.debug('md5sum')
     with open(filename, "rb") as file:
         data = file.read()
     md5_sum = hashlib.md5(data).hexdigest()
@@ -103,6 +106,7 @@ def md5sum(filename):
 
 class DownloadHandler(tornado.web.RequestHandler):
     def get(self, filename):
+        logging.debug('DownloadHandler')
         with open(DIR + filename, 'rb') as f:
             self.write(f.read())
             f.close()
@@ -114,6 +118,7 @@ class DownloadHandler(tornado.web.RequestHandler):
 
 class UploadHandler(tornado.web.RequestHandler):
     def post(self, filename):
+        logging.debug('UploadHandler')
         file = DIR + filename
         with open(file, 'wb') as f:
             f.write(self.request.body)
@@ -146,6 +151,7 @@ class UploadHandler(tornado.web.RequestHandler):
 
 class InfoHandler(tornado.web.RequestHandler):
     def get(self, filename):
+        logging.debug('InfoHandler')
         filepath = DIR + filename
         if os.path.isfile(filepath):
             isfile = 1
