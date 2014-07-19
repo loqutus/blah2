@@ -3,7 +3,7 @@ import sys
 import os
 import hashlib
 import logging
-import socket
+from settings import TIMEOUT
 
 import requests
 
@@ -26,6 +26,7 @@ logging.basicConfig(filename='client.log', level=logging.DEBUG)
 
 
 def md5():
+    logging.debug('md5')
     with open(FILE, "rb") as file:
         data = file.read()
         md5_sum = hashlib.md5(data).hexdigest()
@@ -34,6 +35,7 @@ def md5():
 
 
 def upload():
+    logging.debug('upload')
     if os.path.isfile(FILE):
         if info() == 0:
             logging.debug('file exists on server, exiting...')
@@ -43,7 +45,7 @@ def upload():
         logging.debug("upload file:" + str(FILE))
         logging.debug('upload headers:' + str(headers))
         logging.debug('upload_url:' + URL_UPLOAD)
-        r = requests.post(URL_UPLOAD, data, headers=headers)
+        r = requests.post(URL_UPLOAD, data, headers=headers, timeout=TIMEOUT)
         if r.status_code == 200:
             logging.debug("OK")
             exit(0)
@@ -56,7 +58,8 @@ def upload():
 
 
 def info():
-    r = requests.get(URL_INFO)
+    logging.debug('info')
+    r = requests.get(URL_INFO, timeout=TIMEOUT)
     logging.debug(r.content.decode("ascii"))
 
     if r.status_code == 200:
@@ -69,7 +72,8 @@ def info():
 
 
 def download():
-    r = requests.get(URL_DOWNLOAD)
+    logging.debug('download')
+    r = requests.get(URL_DOWNLOAD, timeout=TIMEOUT)
     if r.status_code == '200':
         with open(FILE, 'wb') as f:
             for chunk in r.content(4096):
@@ -88,13 +92,12 @@ def download():
 
 
 def stop():
+    logging.debug('stop')
     try:
-        s = socket.socket()
-        s.connect(HOST, PORT)
-    except Exception:
+        r = requests.get(URL_STOP, timeout=TIMEOUT)
+    except requests.exceptions.ConnectionError:
         logging.debug('server is not running...')
-        exit(1)
-    r = requests.get(URL_STOP)
+        exit(0)
     if r.status_code == 200:
         logging.debug('server stopped')
         exit(0)
@@ -104,6 +107,7 @@ def stop():
 
 
 if __name__ == '__main__':
+    logging.debug('main starting')
     if ACTION == 'upload':
         upload()
     elif ACTION == 'download':
@@ -115,3 +119,5 @@ if __name__ == '__main__':
     else:
         logging.debug("unknown action, exiting...")
         exit(1)
+    logging.debug('client stopping')
+    exit(0)

@@ -12,6 +12,7 @@ import tornado.web
 import tornado.httputil
 
 import settings
+from settings import TIMEOUT
 
 
 global file_read
@@ -65,7 +66,7 @@ def ask_host(filename, host):
         port = PORT2
         logging.debug('ask_HOST2')
     url = 'http://' + host + ':' + str(port) + '/info/' + filename
-    request_response = requests.get(url)
+    request_response = requests.get(url, timeout=TIMEOUT)
     logging.debug('request_response: ' + str(request_response.status_code))
     if request_response.status_code == 200:
         return 0
@@ -86,7 +87,7 @@ def upload(filename, content, md5, host_id):
     # ipdb.set_trace()
     headers = {'content-type': 'application/bin', 'md5': md5, "client": '0'}
     url_upload = "http://" + host + ":" + str(port) + '/upload/' + filename
-    r = requests.post(url_upload, content, headers=headers)
+    r = requests.post(url_upload, content, headers=headers, timeout=TIMEOUT)
     logging.debug("upload: " + str(r.status_code))
     if r.status_code == 200:
         logging.debug("OK")

@@ -10,3 +10,4 @@ PORT3 = 8082
 HOST3 = 'localhost'
 DIR3 = '/home/rusik/PycharmProjects/blah/data3/'
 LOG3 = 'server3.log'
+TIMEOUT = 5
