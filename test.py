@@ -3,6 +3,7 @@ import os
 import glob
 import settings
 import ipdb
+import time
 
 
 def kill_server():
@@ -33,14 +34,15 @@ def kill_client():
     cmd = "for i in $(ps aux | grep client.py | grep -v grep | awk '{print $5}');" + \
           " do kill -9 $i ; done"
     os.system(cmd)
-    print ('client killed')
+    print('client killed')
 
 
 def rm_files():
     """Removing existings data files, and logs
     """
     print('rm_files')
-    for f in glob.glob('/home/rusik/PycharmProjects/data*/*'):
+    print(os.getcwd())
+    for f in glob.glob(os.getcwd() + '/data*/*'):
         os.remove(f)
     if os.path.isfile('server1.log'):
         os.remove('server1.log')
@@ -83,11 +85,13 @@ def upload_file(file, host):
 if __name__ == '__main__':
     print('main')
     kill_client()
-
-    rm_files()
     kill_server()
+    rm_files()
     start_server(1)
     start_server(2)
     start_server(3)
-    # upload_file(1, 1)
+    time.sleep(2)
+    upload_file(1, 1)
+    upload_file(2, 2)
+    upload_file(3, 3)
     print('exiting...')

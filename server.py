@@ -47,11 +47,11 @@ elif SERVER_ID == '3':
     DIR = settings.DIR3
     LOG = settings.LOG3
 else:
-    print("Wrong host id, exiting...")
+    logging.debug("Wrong host id, exiting...")
     exit(1)
 
-logging.basicConfig(filename=LOG, level=logging.DEBUG)
-ch = logging.StreamHandler(sys.stdout)
+# logging.basicConfig(filename=LOG, level=logging.debug)
+#ch = logging.StreamHandler(sys.stdout)
 logging.debug("starting server " + HOST + ":" + str(PORT))
 
 
@@ -87,12 +87,14 @@ def upload(filename, content, md5, host_id):
     # ipdb.set_trace()
     headers = {'content-type': 'application/bin', 'md5': md5, "client": '0'}
     url_upload = "http://" + host + ":" + str(port) + '/upload/' + filename
+    logging.debug('upload: ' + url_upload)
+    logging.debug('upload headers: ' + str(headers))
     r = requests.post(url_upload, content, headers=headers, timeout=TIMEOUT)
     logging.debug("upload: " + str(r.status_code))
     if r.status_code == 200:
-        logging.debug("OK")
+        logging.debug("upload OK")
     else:
-        logging.debug("ERROR: " + str(r.status_code))
+        logging.debug("upload ERROR: " + str(r.status_code))
         exit(1)
 
 
@@ -131,8 +133,8 @@ class UploadHandler(tornado.web.RequestHandler):
         if md5 == md5sum(file):
             m = open(file + '.txt', 'w')
             m.write(md5)
-            logging.debug('ask_host1: ' + str(ask_host(filename, 1)))
-            logging.debug('ask_host2: ' + str(ask_host(filename, 2)))
+            logging.debug('ask_host1: ')
+            logging.debug('ask_host2: ')
             logging.debug("client: " + str(client))
             if client == '1':
                 if ask_host(filename, 1) == 1:

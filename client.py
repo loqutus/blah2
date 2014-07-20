@@ -22,7 +22,7 @@ else:
     PORT = sys.argv[2].split(':')[1]
     URL_STOP = 'http://' + HOST + ':' + PORT + '/stop/'
 
-logging.basicConfig(filename='client.log', level=logging.DEBUG)
+#logging.basicConfig(filename='client.log', level=logging.debug)
 
 
 def md5():
@@ -39,22 +39,26 @@ def upload():
     if os.path.isfile(FILE):
         if info() == 0:
             logging.debug('file exists on server, exiting...')
-            exit(1)
+            return(1)
         data = open(FILE, "rb").read()
-        headers = {'content-type': 'application/bin', 'md5': md5(), 'CLIENT': '1'}
+        headers = {'content-type': 'application/bin', 'md5': md5(), 'client': '1'}
         logging.debug("upload file:" + str(FILE))
         logging.debug('upload headers:' + str(headers))
         logging.debug('upload_url:' + URL_UPLOAD)
-        r = requests.post(URL_UPLOAD, data, headers=headers, timeout=TIMEOUT)
+        try:
+            r = requests.post(URL_UPLOAD, data, headers=headers, timeout=TIMEOUT)
+        except requests.exceptions.Timeout:
+            logging.debug('upload timeout, exiting...')
+            return(1)
         if r.status_code == 200:
-            logging.debug("OK")
-            exit(0)
+            logging.debug("upload succeeded")
+            return(0)
         else:
-            logging.debug("ERROR: ", r.status_code)
-            exit(1)
+            logging.debug("ERROR: " + str(r.status_code))
+            return(1)
     else:
         logging.debug("no such file, exiting...")
-        exit(1)
+        return(1)
 
 
 def info():
@@ -63,12 +67,11 @@ def info():
     logging.debug(r.content.decode("ascii"))
 
     if r.status_code == 200:
-        if r.status_code == 200:
-            logging.debug("OK")
-            return 0
-        elif r.status_code == 404:
-            logging.debug("ERROR: " + "file not found")
-            return 1
+        logging.debug("OK")
+        return 0
+    elif r.status_code == 404:
+        logging.debug("ERROR: file not found")
+        return 1
 
 
 def download():
@@ -98,6 +101,9 @@ def stop():
     except requests.exceptions.ConnectionError:
         logging.debug('server is not running...')
         exit(0)
+    except requests.exceptions.Timeout:
+        os.system('killall -9 python3 ./server.py')
+        exit(0)
     if r.status_code == 200:
         logging.debug('server stopped')
         exit(0)
@@ -109,11 +115,17 @@ def stop():
 if __name__ == '__main__':
     logging.debug('main starting')
     if ACTION == 'upload':
-        upload()
+        if upload() == 1:
+            exit(1)
+        else:
+            exit(0)
     elif ACTION == 'download':
         download()
     elif ACTION == 'info':
-        info()
+        if info():
+            exit(1)
+        else:
+            exit(0)
     elif ACTION == 'stop':
         stop()
     else:
