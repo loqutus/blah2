@@ -1,3 +1,4 @@
+PROJECT_DIR='/home/rusik/PycharmProjects/blah/'
 PORT1 = 8080
 HOST1 = 'localhost'
 DIR1 = '/home/rusik/PycharmProjects/blah/data1/'
@@ -11,3 +12,4 @@ HOST3 = 'localhost'
 DIR3 = '/home/rusik/PycharmProjects/blah/data3/'
 LOG3 = 'server3.log'
 TIMEOUT = 5
+DOWNLOAD_DIR = '/home/rusik/PycharmProjects/blah/download/'

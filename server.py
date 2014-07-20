@@ -50,8 +50,8 @@ else:
     logging.debug("Wrong host id, exiting...")
     exit(1)
 
-# logging.basicConfig(filename=LOG, level=logging.debug)
-#ch = logging.StreamHandler(sys.stdout)
+logging.basicConfig(filename=LOG, level=logging.DEBUG)
+ch = logging.StreamHandler(sys.stdout)
 logging.debug("starting server " + HOST + ":" + str(PORT))
 
 
@@ -103,7 +103,7 @@ def md5sum(filename):
     with open(filename, "rb") as file:
         data = file.read()
     md5_sum = hashlib.md5(data).hexdigest()
-    # logging.debug('md5sum: ', str(md5_sum))
+    logging.debug('md5sum: ' + str(md5_sum))
     return md5_sum
 
 
@@ -113,9 +113,12 @@ class DownloadHandler(tornado.web.RequestHandler):
         with open(DIR + filename, 'rb') as f:
             self.write(f.read())
             f.close()
+        logging.debug('file read ok')
         f = open(DIR + filename + '.txt', 'r')
         md5 = f.read()
+        logging.debug(filename + '.txt: ' + md5)
         self.set_header('md5', md5)
+        logging.debug('DownloadHandlerfinish')
         self.finish()
 
 

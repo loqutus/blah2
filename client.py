@@ -3,7 +3,7 @@ import sys
 import os
 import hashlib
 import logging
-from settings import TIMEOUT
+from settings import TIMEOUT, PROJECT_DIR
 
 import requests
 
@@ -22,7 +22,7 @@ else:
     PORT = sys.argv[2].split(':')[1]
     URL_STOP = 'http://' + HOST + ':' + PORT + '/stop/'
 
-#logging.basicConfig(filename='client.log', level=logging.debug)
+logging.basicConfig(filename=PROJECT_DIR + 'client.log', level=logging.DEBUG)
 
 
 def md5():
@@ -39,7 +39,7 @@ def upload():
     if os.path.isfile(FILE):
         if info() == 0:
             logging.debug('file exists on server, exiting...')
-            return(1)
+            return (1)
         data = open(FILE, "rb").read()
         headers = {'content-type': 'application/bin', 'md5': md5(), 'client': '1'}
         logging.debug("upload file:" + str(FILE))
@@ -49,16 +49,16 @@ def upload():
             r = requests.post(URL_UPLOAD, data, headers=headers, timeout=TIMEOUT)
         except requests.exceptions.Timeout:
             logging.debug('upload timeout, exiting...')
-            return(1)
+            return (1)
         if r.status_code == 200:
             logging.debug("upload succeeded")
-            return(0)
+            return (0)
         else:
             logging.debug("ERROR: " + str(r.status_code))
-            return(1)
+            return (1)
     else:
         logging.debug("no such file, exiting...")
-        return(1)
+        return (1)
 
 
 def info():
@@ -77,12 +77,12 @@ def info():
 def download():
     logging.debug('download')
     r = requests.get(URL_DOWNLOAD, timeout=TIMEOUT)
-    if r.status_code == '200':
+    logging.debug(r.status_code)
+    if r.status_code == 200:
         with open(FILE, 'wb') as f:
-            for chunk in r.content(4096):
-                f.write(chunk)
+            f.write(r.content)
     else:
-        logging.debug("ERROR" + str(r.status_code))
+        logging.debug("ERROR " + str(r.status_code))
         exit(1)
     logging.debug('headers: ' + str(r.headers))
     if r.headers['md5'] == md5():

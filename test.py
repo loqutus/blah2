@@ -4,6 +4,14 @@ import glob
 import settings
 import ipdb
 import time
+import hashlib
+
+
+def md5(filename):
+    with open(filename, "rb") as file:
+        data = file.read()
+        md5_sum = hashlib.md5(data).hexdigest()
+        return md5_sum
 
 
 def kill_server():
@@ -44,6 +52,8 @@ def rm_files():
     print(os.getcwd())
     for f in glob.glob(os.getcwd() + '/data*/*'):
         os.remove(f)
+    for f in glob.glob(os.getcwd() + '/download/*'):
+        os.remove(f)
     if os.path.isfile('server1.log'):
         os.remove('server1.log')
     if os.path.isfile('server2.log'):
@@ -82,6 +92,28 @@ def upload_file(file, host):
     os.system("./client.py upload " + str(file) + ".bin " + hostname)
 
 
+def download_file(file, host):
+    """Downloading test files
+
+    :param file: downloading file
+    :param host: downloading host
+    """
+    print('download_file')
+    if host == 1:
+        hostname = settings.HOST1 + ':' + str(settings.PORT1)
+    elif host == 2:
+        hostname = settings.HOST2 + ':' + str(settings.PORT2)
+    elif host == 3:
+        hostname = settings.HOST3 + ':' + str(settings.PORT3)
+    os.chdir(settings.DOWNLOAD_DIR)
+    print("./client.py download " + str(file) + ".bin " + hostname)
+    os.system("../client.py download " + str(file) + ".bin " + hostname)
+    if md5(settings.PROJECT_DIR + str(file) + '.bin') == md5(settings.DOWNLOAD_DIR + str(file) + '.bin'):
+        print('md5 OK')
+    else:
+        print('md5 FAILED')
+
+
 if __name__ == '__main__':
     print('main')
     kill_client()
@@ -94,4 +126,13 @@ if __name__ == '__main__':
     upload_file(1, 1)
     upload_file(2, 2)
     upload_file(3, 3)
+    upload_file(1, 2)
+    upload_file(1, 3)
+    upload_file(2, 1)
+    upload_file(2, 3)
+    upload_file(3, 1)
+    upload_file(3, 2)
+    download_file(1, 1)
+    download_file(2, 2)
+    download_file(3, 3)
     print('exiting...')
