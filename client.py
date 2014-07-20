@@ -15,6 +15,7 @@ if ACTION != 'stop':
     PORT = sys.argv[3].split(":")[1]
     URL_DOWNLOAD = 'http://' + HOST + ':' + PORT + '/download/' + FILE
     URL_UPLOAD = 'http://' + HOST + ':' + PORT + '/upload/' + FILE
+    URL_REMOVE = 'http://' + HOST + ':' + PORT + '/remove/' + FILE
     URL_INFO = 'http://' + HOST + ':' + PORT + '/info/' + FILE
 
 else:
@@ -112,6 +113,18 @@ def stop():
         exit(1)
 
 
+def remove():
+    logging.debug('remove')
+    try:
+        r = requests.get(URL_REMOVE, timeout=TIMEOUT)
+    except(requests.exceptions.ConnectionError):
+        logging.debug('server is not running...')
+        exit(0)
+    except(requests.exceptions.Timeout):
+        logging.debug('server timeout...')
+        exit(0)
+
+
 if __name__ == '__main__':
     logging.debug('main starting')
     if ACTION == 'upload':
@@ -128,6 +141,8 @@ if __name__ == '__main__':
             exit(0)
     elif ACTION == 'stop':
         stop()
+    elif ACTION == 'remove':
+        remove()
     else:
         logging.debug("unknown action, exiting...")
         exit(1)

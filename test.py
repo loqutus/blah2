@@ -108,10 +108,33 @@ def download_file(file, host):
     os.chdir(settings.DOWNLOAD_DIR)
     print("./client.py download " + str(file) + ".bin " + hostname)
     os.system("../client.py download " + str(file) + ".bin " + hostname)
-    if md5(settings.PROJECT_DIR + str(file) + '.bin') == md5(settings.DOWNLOAD_DIR + str(file) + '.bin'):
+    if md5(settings.PROJECT_DIR + str(file) + '.bin') == \
+            md5(settings.DOWNLOAD_DIR + str(file) + '.bin'):
         print('md5 OK')
     else:
         print('md5 FAILED')
+
+
+def remove_file(file, host):
+    print('remove_file')
+    if host == 1:
+        hostname = settings.HOST1 + ':' + str(settings.PORT1)
+        directory = settings.DIR1
+    elif host == 2:
+        hostname = settings.HOST2 + ':' + str(settings.PORT2)
+        directory = settings.DIR2
+    elif host == 3:
+        hostname = settings.HOST3 + ':' + str(settings.PORT3)
+        directory = settings.DIR3
+    print("./client.py remove " + str(file) + ".bin " + hostname)
+    os.system("../client.py remove " + str(file) + ".bin " + hostname)
+    if os.path.isfile(directory + str(file) + '.bin') == False \
+            and os.path.isfile(directory + str(file) + '.bin.txt') == False:
+        print('file removed')
+        return 0
+    else:
+        print('file is NOT removed')
+        return 1
 
 
 if __name__ == '__main__':
@@ -135,4 +158,7 @@ if __name__ == '__main__':
     download_file(1, 1)
     download_file(2, 2)
     download_file(3, 3)
+    remove_file(1, 1)
+    remove_file(2, 2)
+    remove_file(3, 3)
     print('exiting...')

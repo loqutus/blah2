@@ -118,7 +118,7 @@ class DownloadHandler(tornado.web.RequestHandler):
         md5 = f.read()
         logging.debug(filename + '.txt: ' + md5)
         self.set_header('md5', md5)
-        logging.debug('DownloadHandlerfinish')
+        logging.debug('DownloadHandler finish')
         self.finish()
 
 
@@ -155,6 +155,22 @@ class UploadHandler(tornado.web.RequestHandler):
         self.finish()
 
 
+class RemoveHandler(tornado.web.RequestHandler):
+    def get(self, filename):
+        logging.debug('RemoveHandler')
+        filepath = DIR + filename
+        if os.path.isfile(filepath):
+            os.remove(filepath)
+            logging.debug('REMOVE ' + filepath)
+        if os.path.isfile(filepath + '.txt'):
+            os.remove(filepath + '.txt')
+            logging.debug('REMOVE ' + filepath)
+        else:
+            self.write(filename + 'file not found')
+            self.set_status(404, 'file not found')
+        self.finish()
+
+
 class InfoHandler(tornado.web.RequestHandler):
     def get(self, filename):
         logging.debug('InfoHandler')
@@ -188,8 +204,10 @@ class StopHandler(tornado.web.RequestHandler):
 application = tornado.web.Application([
     (r"/download/(.*)", DownloadHandler),
     (r"/upload/(.*)", UploadHandler),
+    (r"/remove/(.*)", RemoveHandler),
     (r"/info/(.*)", InfoHandler),
     (r"/stop/", StopHandler)
+
 ])
 
 if __name__ == '__main__':
