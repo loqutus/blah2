@@ -116,6 +116,11 @@ def download_file(file, host):
 
 
 def remove_file(file, host):
+    """Removing test files
+
+    :param file: removing file
+    :param host: removing host
+    """
     print('remove_file')
     if host == 1:
         hostname = settings.HOST1 + ':' + str(settings.PORT1)
@@ -149,12 +154,9 @@ if __name__ == '__main__':
     upload_file(1, 1)
     upload_file(2, 2)
     upload_file(3, 3)
-    upload_file(1, 2)
-    upload_file(1, 3)
-    upload_file(2, 1)
-    upload_file(2, 3)
-    upload_file(3, 1)
-    upload_file(3, 2)
+    upload_file(1, 1)
+    upload_file(2, 2)
+    upload_file(3, 3)
     download_file(1, 1)
     download_file(2, 2)
     download_file(3, 3)

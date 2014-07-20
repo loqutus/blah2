@@ -116,10 +116,12 @@ def stop():
 def remove():
     logging.debug('remove')
     try:
-        r = requests.get(URL_REMOVE, timeout=TIMEOUT)
+        headers = {'client': '1'}
+        r = requests.get(URL_REMOVE, headers=headers, timeout=TIMEOUT)
     except(requests.exceptions.ConnectionError):
         logging.debug('server is not running...')
         exit(0)
+
     except(requests.exceptions.Timeout):
         logging.debug('server timeout...')
         exit(0)

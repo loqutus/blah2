@@ -168,6 +168,18 @@ class RemoveHandler(tornado.web.RequestHandler):
         else:
             self.write(filename + 'file not found')
             self.set_status(404, 'file not found')
+        client = self.request.headers.get('client')
+        if client == '1':
+            URL_REMOVE1 = 'http://' + HOST1 + ':' + str(PORT1) + '/remove/' + filename
+            URL_REMOVE2 = 'http://' + HOST2 + ':' + str(PORT2) + '/remove/' + filename
+            if ask_host(filename, 1) == 0:
+                logging.debug('remove1')
+                headers = {'client': '0'}
+                r = requests.get(URL_REMOVE1, headers=headers, timeout=TIMEOUT)
+            if ask_host(filename, 2) == 0:
+                logging.debug('remove2')
+                headers = {'client': '0'}
+                r = requests.get(URL_REMOVE2, headers=headers, timeout=TIMEOUT)
         self.finish()
 
 
