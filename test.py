@@ -98,6 +98,12 @@ def download_file(file, host):
     :param file: downloading file
     :param host: downloading host
     """
+    if host == 1:
+        directory = settings.DIR1
+    elif host == 2:
+        directory = settings.DIR2
+    elif host == 3:
+        directory = settings.DIR3
     print('download_file')
     if host == 1:
         hostname = settings.HOST1 + ':' + str(settings.PORT1)
@@ -108,11 +114,16 @@ def download_file(file, host):
     os.chdir(settings.DOWNLOAD_DIR)
     print("./client.py download " + str(file) + ".bin " + hostname)
     os.system("../client.py download " + str(file) + ".bin " + hostname)
-    if md5(settings.PROJECT_DIR + str(file) + '.bin') == \
-            md5(settings.DOWNLOAD_DIR + str(file) + '.bin'):
-        print('md5 OK')
+    file_path = directory + str(file) + '.bin'
+    file_txt_path = directory + str(file) + '.bin.txt'
+    if os.path.exists(file_path) and os.path.exists(file_txt_path):
+        if md5(settings.PROJECT_DIR + str(file) + '.bin') == \
+                md5(settings.DOWNLOAD_DIR + str(file) + '.bin'):
+            print('md5 OK')
+        else:
+            print('md5 FAILED')
     else:
-        print('md5 FAILED')
+        print('file is not downloaded')
 
 
 def remove_file(file, host):
@@ -142,6 +153,22 @@ def remove_file(file, host):
         return 1
 
 
+def rm_file_from_fs(file, dir_id):
+    if dir_id == 1:
+        directory = settings.DIR1
+    elif dir_id == 2:
+        directory = settings.DIR2
+    elif dir_id == 3:
+        directory = settings.DIR3
+    print('rm_file ' + directory + ' ' + str(file) + '.bin')
+    file_path = directory + str(file) + '.bin'
+    file_txt_path = directory + str(file) + '.bin.txt'
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    if os.path.exists(file_txt_path):
+        os.remove(file_txt_path)
+
+
 if __name__ == '__main__':
     print('main')
     kill_client()
@@ -157,6 +184,7 @@ if __name__ == '__main__':
     upload_file(1, 1)
     upload_file(2, 2)
     upload_file(3, 3)
+    rm_file_from_fs(1, 1)
     download_file(1, 1)
     download_file(2, 2)
     download_file(3, 3)

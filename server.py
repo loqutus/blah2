@@ -98,6 +98,26 @@ def upload(filename, content, md5, host_id):
         exit(1)
 
 
+def download(filename, host_id):
+    logging.debug('download')
+    if host_id == 1:
+        host = HOST1
+        port = PORT1
+    elif host_id == 2:
+        host = HOST2
+        port = PORT2
+    header = {'client': '1'}
+    url_download = 'http://' + HOST + ':' + PORT + '/download/' + filename
+    r = requests.get(url_download, headers=header, timeout=TIMEOUT)
+    logging.debug(r.status_code)
+    if r.status_code == 200 and r.headers.get('md5') == hashlib.md5(r.data).hexdigest():
+        logging.debug('file downloaded from host' + host)
+        file = DIR + filename
+        with open(file, 'wb') as f:
+            f.write(r.data)
+        f.close()
+
+
 def md5sum(filename):
     logging.debug('md5sum')
     with open(filename, "rb") as file:
@@ -110,16 +130,46 @@ def md5sum(filename):
 class DownloadHandler(tornado.web.RequestHandler):
     def get(self, filename):
         logging.debug('DownloadHandler')
-        with open(DIR + filename, 'rb') as f:
-            self.write(f.read())
-            f.close()
-        logging.debug('file read ok')
-        f = open(DIR + filename + '.txt', 'r')
-        md5 = f.read()
-        logging.debug(filename + '.txt: ' + md5)
-        self.set_header('md5', md5)
-        logging.debug('DownloadHandler finish')
-        self.finish()
+        if os.path.isfile(DIR + filename):
+            with open(DIR + filename, 'rb') as f:
+                self.write(f.read())
+                f.close()
+            logging.debug('file read ok')
+            f = open(DIR + filename + '.txt', 'r')
+            md5 = f.read()
+            logging.debug(filename + '.txt: ' + md5)
+        if os.path.exists(DIR + filename):
+            if md5sum(filename) == md5:
+                self.set_header('md5', md5)
+                logging.debug('md5 correct')
+                self.set_status(200)
+                self.finish()
+            else:
+                logging.debug('md5 error')
+                logging.debug('asking other HOSTS')
+                client = self.request.headers.get('client')
+                if client == '1':
+                    if ask_host(filename, 1) == 1:
+                        download(filename, 1)
+                    elif ask_host(filename, 1) == 1:
+                        download(filename, 2)
+                    else:
+                        logging.debug('cannot find file on all servers...')
+                        self.set_status(500)
+                        self.finish()
+        else:
+            logging.debug('asking other HOSTS')
+            client = self.request.headers.get('client')
+            if client == '1':
+                if ask_host(filename, 1) == 1:
+                    download(filename, 1)
+                elif ask_host(filename, 1) == 1:
+                    download(filename, 2)
+                else:
+                    logging.debug('cannot find file on all servers...')
+                    self.set_status(500)
+                    self.finish()
+            logging.debug('DownloadHandler finish')
 
 
 class UploadHandler(tornado.web.RequestHandler):
@@ -129,10 +179,13 @@ class UploadHandler(tornado.web.RequestHandler):
         with open(file, 'wb') as f:
             f.write(self.request.body)
         f.close()
+        if os.path.exists(file):
+            logging.debug('file exists')
         md5 = self.request.headers.get('md5')
         client = self.request.headers.get('client')
         logging.debug('Client: ' + str(client))
         logging.debug('MD5: ' + md5)
+
         if md5 == md5sum(file):
             m = open(file + '.txt', 'w')
             m.write(md5)
@@ -198,7 +251,7 @@ class InfoHandler(tornado.web.RequestHandler):
         else:
             isfile = 0
         if isfile == 1 and md5_correct == 1:
-            self.write('ISFILE: ' + str(isfile) + ' NAME: ' + \
+            self.write('ISFILE: ' + str(isfile) + ' NAME: ' +
                        filename + ' MD5: ' + file_txt_read)
             self.set_status(200, 'OK')
         else:

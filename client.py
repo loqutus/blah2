@@ -77,7 +77,8 @@ def info():
 
 def download():
     logging.debug('download')
-    r = requests.get(URL_DOWNLOAD, timeout=TIMEOUT)
+    header = {'client':'1'}
+    r = requests.get(URL_DOWNLOAD, headers = header, timeout=TIMEOUT)
     logging.debug(r.status_code)
     if r.status_code == 200:
         with open(FILE, 'wb') as f:
