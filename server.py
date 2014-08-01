@@ -3,6 +3,7 @@
 import os
 import sys
 import hashlib
+from logging import debug
 import logging
 import ipdb
 
@@ -47,27 +48,27 @@ elif SERVER_ID == '3':
     DIR = settings.DIR3
     LOG = settings.LOG3
 else:
-    logging.debug("Wrong host id, exiting...")
+    debug('Wrong host id, exiting...')
     exit(1)
 
-logging.basicConfig(filename=LOG, level=logging.DEBUG)
+logging.basicConfig(filename=LOG, level=4)
 ch = logging.StreamHandler(sys.stdout)
-logging.debug("starting server " + HOST + ":" + str(PORT))
+debug('starting server ' + HOST + ':' + str(PORT))
 
 
 def ask_host(filename, host):
-    logging.debug('ask_host')
+    debug('ask_host')
     if host == 1:
         host = HOST1
         port = PORT1
-        logging.debug('ask_HOST1')
+        debug('ask_HOST1')
     elif host == 2:
         host = HOST2
         port = PORT2
-        logging.debug('ask_HOST2')
+        debug('ask_HOST2')
     url = 'http://' + host + ':' + str(port) + '/info/' + filename
     request_response = requests.get(url, timeout=TIMEOUT)
-    logging.debug('request_response: ' + str(request_response.status_code))
+    debug('request_response: ' + str(request_response.status_code))
     if request_response.status_code == 200:
         return 0
     elif request_response.status_code == 404:
@@ -77,7 +78,7 @@ def ask_host(filename, host):
 
 
 def upload(filename, content, md5, host_id):
-    logging.debug('upload')
+    debug('upload')
     if host_id == 1:
         host = HOST1
         port = PORT1
@@ -85,21 +86,21 @@ def upload(filename, content, md5, host_id):
         host = HOST2
         port = PORT2
     # ipdb.set_trace()
-    headers = {'content-type': 'application/bin', 'md5': md5, "client": '0'}
-    url_upload = "http://" + host + ":" + str(port) + '/upload/' + filename
-    logging.debug('upload: ' + url_upload)
-    logging.debug('upload headers: ' + str(headers))
+    headers = {'content-type': 'application/bin', 'md5': md5, 'client': '0'}
+    url_upload = 'http://' + host + ':' + str(port) + '/upload/' + filename
+    debug('upload: ' + url_upload)
+    debug('upload headers: ' + str(headers))
     r = requests.post(url_upload, content, headers=headers, timeout=TIMEOUT)
-    logging.debug("upload: " + str(r.status_code))
+    debug('upload: ' + str(r.status_code))
     if r.status_code == 200:
-        logging.debug("upload OK")
+        debug('upload OK')
     else:
-        logging.debug("upload ERROR: " + str(r.status_code))
+        debug('upload ERROR: ' + str(r.status_code))
         exit(1)
 
 
 def download(filename, host_id):
-    logging.debug('download')
+    debug('download')
     if host_id == 1:
         host = HOST1
         port = PORT1
@@ -107,100 +108,122 @@ def download(filename, host_id):
         host = HOST2
         port = PORT2
     header = {'client': '1'}
-    url_download = 'http://' + HOST + ':' + PORT + '/download/' + filename
+    url_download = 'http://' + HOST + ':' + str(PORT) + '/download/' + filename
     r = requests.get(url_download, headers=header, timeout=TIMEOUT)
-    logging.debug(r.status_code)
+    debug(r.status_code)
     if r.status_code == 200 and r.headers.get('md5') == hashlib.md5(r.data).hexdigest():
-        logging.debug('file downloaded from host' + host)
+        debug('file downloaded from host' + host + str(port))
         file = DIR + filename
         with open(file, 'wb') as f:
             f.write(r.data)
         f.close()
+        return 0
+    else:
+        debug('downloading ' + filename + ' from host ' + str(host) + ' failed')
+        return 1
 
 
 def md5sum(filename):
-    logging.debug('md5sum')
-    with open(filename, "rb") as file:
+    debug('md5sum')
+    with open(filename, 'rb') as file:
         data = file.read()
     md5_sum = hashlib.md5(data).hexdigest()
-    logging.debug('md5sum: ' + str(md5_sum))
+    debug('md5sum: ' + str(md5_sum))
     return md5_sum
 
 
 class DownloadHandler(tornado.web.RequestHandler):
     def get(self, filename):
-        logging.debug('DownloadHandler')
+        debug('DownloadHandler')
         if os.path.isfile(DIR + filename):
-            with open(DIR + filename, 'rb') as f:
-                self.write(f.read())
-                f.close()
-            logging.debug('file read ok')
-            f = open(DIR + filename + '.txt', 'r')
+            f = open(DIR + filename + '.md5', 'r')
             md5 = f.read()
-            logging.debug(filename + '.txt: ' + md5)
-        if os.path.exists(DIR + filename):
-            if md5sum(filename) == md5:
+            if md5sum(DIR + filename) == md5:
+                with open(DIR + filename, 'rb') as f:
+                    self.write(f.read())
+                    f.close()
+                debug('file read ok')
                 self.set_header('md5', md5)
-                logging.debug('md5 correct')
+                debug('md5 correct')
                 self.set_status(200)
+                debug(filename + '.md5: ' + md5 + ' DownloadHandler exit')
                 self.finish()
+                return 0
             else:
-                logging.debug('md5 error')
-                logging.debug('asking other HOSTS')
+                debug('md5 error')
+                debug('asking other HOSTS')
                 client = self.request.headers.get('client')
                 if client == '1':
                     if ask_host(filename, 1) == 1:
-                        download(filename, 1)
+                        if not download(filename, 1):
+                            print('file downloaded from host 1')
+                            return 0
                     elif ask_host(filename, 1) == 1:
-                        download(filename, 2)
+                        if not download(filename, 2):
+                            print('file downloaded from host 2')
+                            return 0
                     else:
-                        logging.debug('cannot find file on all servers...')
+                        debug('cannot find file on all servers...')
                         self.set_status(500)
                         self.finish()
+                        return 1
+                self.finish()
         else:
-            logging.debug('asking other HOSTS')
+            debug('asking other HOSTS')
             client = self.request.headers.get('client')
             if client == '1':
                 if ask_host(filename, 1) == 1:
                     download(filename, 1)
+                    return 0
                 elif ask_host(filename, 1) == 1:
                     download(filename, 2)
+                    return 0
                 else:
-                    logging.debug('cannot find file on all servers...')
+                    debug('cannot find file on all servers...')
                     self.set_status(500)
                     self.finish()
-            logging.debug('DownloadHandler finish')
+                    return 1
+            else:
+                debug('not a client, cannot find file')
+                self.finish()
+                return 1
+            debug('DownloadHandler finish')
 
 
 class UploadHandler(tornado.web.RequestHandler):
     def post(self, filename):
-        logging.debug('UploadHandler')
+        debug('UploadHandler')
         file = DIR + filename
-        with open(file, 'wb') as f:
-            f.write(self.request.body)
-        f.close()
-        if os.path.exists(file):
-            logging.debug('file exists')
         md5 = self.request.headers.get('md5')
         client = self.request.headers.get('client')
-        logging.debug('Client: ' + str(client))
-        logging.debug('MD5: ' + md5)
+        debug('Client: ' + str(client))
+        debug('MD5: ' + md5)
+
+        if os.path.exists(file):
+            debug('file exists')
+            if md5 == md5sum(file):
+                debug('requested file is the same, as uploading.exit...')
+                self.finish()
+        else:
+            with open(file, 'wb') as f:
+                f.write(self.request.body)
+                f.close()
 
         if md5 == md5sum(file):
-            m = open(file + '.txt', 'w')
+            m = open(file + '.md5', 'w')
             m.write(md5)
-            logging.debug('ask_host1: ')
-            logging.debug('ask_host2: ')
-            logging.debug("client: " + str(client))
+            debug('ask_host1: ')
+            debug('ask_host2: ')
+            debug('client: ' + str(client))
             if client == '1':
                 if ask_host(filename, 1) == 1:
-                    logging.debug("upload1")
+                    debug('upload1')
                     upload(filename, self.request.body, md5, 1)
-                    logging.debug("upload1_finish")
+                    debug('upload1_finish')
                 if ask_host(filename, 2) == 1:
-                    logging.debug("upload2")
+                    debug('upload2')
                     upload(filename, self.request.body, md5, 2)
-                    logging.debug("upload2_finish")
+                    debug('upload2_finish')
             self.set_status(200, 'OK')
         else:
             os.remove(file)
@@ -210,14 +233,14 @@ class UploadHandler(tornado.web.RequestHandler):
 
 class RemoveHandler(tornado.web.RequestHandler):
     def get(self, filename):
-        logging.debug('RemoveHandler')
+        debug('RemoveHandler')
         filepath = DIR + filename
         if os.path.isfile(filepath):
             os.remove(filepath)
-            logging.debug('REMOVE ' + filepath)
-        if os.path.isfile(filepath + '.txt'):
-            os.remove(filepath + '.txt')
-            logging.debug('REMOVE ' + filepath)
+            debug('REMOVE ' + filepath)
+        if os.path.isfile(filepath + '.md5'):
+            os.remove(filepath + '.md5')
+            debug('REMOVE ' + filepath)
         else:
             self.write(filename + 'file not found')
             self.set_status(404, 'file not found')
@@ -226,11 +249,11 @@ class RemoveHandler(tornado.web.RequestHandler):
             URL_REMOVE1 = 'http://' + HOST1 + ':' + str(PORT1) + '/remove/' + filename
             URL_REMOVE2 = 'http://' + HOST2 + ':' + str(PORT2) + '/remove/' + filename
             if ask_host(filename, 1) == 0:
-                logging.debug('remove1')
+                debug('remove1')
                 headers = {'client': '0'}
                 r = requests.get(URL_REMOVE1, headers=headers, timeout=TIMEOUT)
             if ask_host(filename, 2) == 0:
-                logging.debug('remove2')
+                debug('remove2')
                 headers = {'client': '0'}
                 r = requests.get(URL_REMOVE2, headers=headers, timeout=TIMEOUT)
         self.finish()
@@ -238,45 +261,52 @@ class RemoveHandler(tornado.web.RequestHandler):
 
 class InfoHandler(tornado.web.RequestHandler):
     def get(self, filename):
-        logging.debug('InfoHandler')
+        debug('InfoHandler')
         filepath = DIR + filename
+        debug(filepath)
         if os.path.isfile(filepath):
             isfile = 1
-            file_txt = open(filepath + ".txt", 'r')
-            file_txt_read = file_txt.read()
-            if file_txt_read == md5sum(filepath):
-                md5_correct = 1
+            debug('isfile')
+            file_md5 = open(filepath + '.md5', 'r')
+            file_md5_data = file_md5.read()
+            if file_md5_data == md5sum(filepath):
+                self.write('ISFILE: ' + str(isfile) + ' NAME: ' + filename + ' MD5: ' + file_read)
+                self.set_status(200, 'OK')
+                self.finish()
+                return 0
             else:
-                md5_correct = 0
+                self.write('ISFILE: ' + str(isfile) + ' NAME: ' + filename + ' MD5: ' + file_read)
+            try:
+                self.set_status(500, 'MD5 error')
+            except:
+                pass
+            self.finish()
+            return 1
         else:
-            isfile = 0
-        if isfile == 1 and md5_correct == 1:
-            self.write('ISFILE: ' + str(isfile) + ' NAME: ' +
-                       filename + ' MD5: ' + file_txt_read)
-            self.set_status(200, 'OK')
-        else:
-            self.write(filename + 'file not found')
+            debug('not isfile')
             self.set_status(404, 'file not found')
-        self.finish()
+            debug('404')
+            self.finish()
+            return 1
 
 
 class StopHandler(tornado.web.RequestHandler):
     def get(self):
-        logging.debug('exiting...')
+        debug('exiting...')
         tornado.ioloop.IOLoop.instance().stop()
 
 
 application = tornado.web.Application([
-    (r"/download/(.*)", DownloadHandler),
-    (r"/upload/(.*)", UploadHandler),
-    (r"/remove/(.*)", RemoveHandler),
-    (r"/info/(.*)", InfoHandler),
-    (r"/stop/", StopHandler)
+    (r'/download/(.*)', DownloadHandler),
+    (r'/upload/(.*)', UploadHandler),
+    (r'/remove/(.*)', RemoveHandler),
+    (r'/info/(.*)', InfoHandler),
+    (r'/stop/', StopHandler)
 
 ])
 
 if __name__ == '__main__':
-    logging.debug('main starting...')
-    application.listen(PORT)
+    debug('main starting...')
+    application.listen(PORT,'0.0.0.0')
     tornado.ioloop.IOLoop.instance().start()
-    logging.debug('main finished')
+    debug('main finished')
