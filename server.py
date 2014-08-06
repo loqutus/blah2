@@ -109,7 +109,11 @@ def download(filename, host_id):
         port = PORT2
     header = {'client': '1'}
     url_download = 'http://' + HOST + ':' + str(PORT) + '/download/' + filename
-    r = requests.get(url_download, headers=header, timeout=TIMEOUT)
+    try:
+        r = requests.get(url_download, headers=header, timeout=TIMEOUT)
+    except requests.exceptions.Timeout:
+        debug('download timeout')
+        return 1
     debug(r.status_code)
     if r.status_code == 200 and r.headers.get('md5') == hashlib.md5(r.data).hexdigest():
         debug('file downloaded from host' + host + str(port))
@@ -134,10 +138,11 @@ def md5sum(filename):
 
 class DownloadHandler(tornado.web.RequestHandler):
     def get(self, filename):
+        # ipdb.set_trace()
         debug('DownloadHandler')
         if os.path.isfile(DIR + filename):
-            f = open(DIR + filename + '.md5', 'r')
-            md5 = f.read()
+            f_md5 = open(DIR + filename + '.md5', 'r')
+            md5 = f_md5.read()
             if md5sum(DIR + filename) == md5:
                 with open(DIR + filename, 'rb') as f:
                     self.write(f.read())
@@ -147,7 +152,7 @@ class DownloadHandler(tornado.web.RequestHandler):
                 debug('md5 correct')
                 self.set_status(200)
                 debug(filename + '.md5: ' + md5 + ' DownloadHandler exit')
-                self.finish()
+                #()
                 return 0
             else:
                 debug('md5 error')
@@ -165,9 +170,9 @@ class DownloadHandler(tornado.web.RequestHandler):
                     else:
                         debug('cannot find file on all servers...')
                         self.set_status(500)
-                        self.finish()
+
                         return 1
-                self.finish()
+
         else:
             debug('asking other HOSTS')
             client = self.request.headers.get('client')
@@ -181,13 +186,13 @@ class DownloadHandler(tornado.web.RequestHandler):
                 else:
                     debug('cannot find file on all servers...')
                     self.set_status(500)
-                    self.finish()
                     return 1
+
             else:
                 debug('not a client, cannot find file')
-                self.finish()
+
                 return 1
-            debug('DownloadHandler finish')
+                #debug('DownloadHandler finish')
 
 
 class UploadHandler(tornado.web.RequestHandler):
@@ -203,7 +208,7 @@ class UploadHandler(tornado.web.RequestHandler):
             debug('file exists')
             if md5 == md5sum(file):
                 debug('requested file is the same, as uploading.exit...')
-                self.finish()
+
         else:
             with open(file, 'wb') as f:
                 f.write(self.request.body)
@@ -228,7 +233,6 @@ class UploadHandler(tornado.web.RequestHandler):
         else:
             os.remove(file)
             self.set_status(500, 'md5 mismatch')
-        self.finish()
 
 
 class RemoveHandler(tornado.web.RequestHandler):
@@ -256,7 +260,6 @@ class RemoveHandler(tornado.web.RequestHandler):
                 debug('remove2')
                 headers = {'client': '0'}
                 r = requests.get(URL_REMOVE2, headers=headers, timeout=TIMEOUT)
-        self.finish()
 
 
 class InfoHandler(tornado.web.RequestHandler):
@@ -270,24 +273,20 @@ class InfoHandler(tornado.web.RequestHandler):
             file_md5 = open(filepath + '.md5', 'r')
             file_md5_data = file_md5.read()
             if file_md5_data == md5sum(filepath):
-                self.write('ISFILE: ' + str(isfile) + ' NAME: ' + filename + ' MD5: ' + file_read)
+                debug('ok')
+                self.write('OK')
                 self.set_status(200, 'OK')
-                self.finish()
-                return 0
             else:
-                self.write('ISFILE: ' + str(isfile) + ' NAME: ' + filename + ' MD5: ' + file_read)
-            try:
-                self.set_status(500, 'MD5 error')
-            except:
-                pass
-            self.finish()
-            return 1
+                debug('md5 error')
+                self.write('MD5 error')
+                try:
+                    self.set_status(500, 'MD5 error')
+                except:
+                    pass
         else:
             debug('not isfile')
             self.set_status(404, 'file not found')
             debug('404')
-            self.finish()
-            return 1
 
 
 class StopHandler(tornado.web.RequestHandler):
@@ -307,6 +306,6 @@ application = tornado.web.Application([
 
 if __name__ == '__main__':
     debug('main starting...')
-    application.listen(PORT,'0.0.0.0')
+    application.listen(PORT, '0.0.0.0')
     tornado.ioloop.IOLoop.instance().start()
     debug('main finished')

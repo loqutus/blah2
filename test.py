@@ -59,7 +59,7 @@ def rm_files():
     if os.path.isfile('server2.log'):
         os.remove('server2.log')
     if os.path.isfile('server3.log'):
-        os.remove('server3.log')
+         os.remove('server3.log')
     if os.path.isfile('client.log'):
         os.remove('client.log')
     print('files removed')
@@ -117,7 +117,7 @@ def download_file(host):
         print('./client.py download ' + str(file) + ' ' + hostname)
         os.system('../client.py download ' + str(file) + ' ' + hostname)
     file_path = directory + str(file)
-    file_txt_path = directory + str(file) + '.txt'
+    file_txt_path = directory + str(file) + '.md5'
     if os.path.exists(file_path) and os.path.exists(file_txt_path):
         if md5(directory + file) == \
                 md5(DOWNLOAD_DIR + file):
@@ -183,9 +183,9 @@ if __name__ == '__main__':
     upload_file(1)
     #upload_file(2)
     #upload_file(3)
-    rm_file_from_fs(1, 1)
-    download_file(1)
-    # download_file(2)
+    #rm_file_from_fs(1, 1)
+    #download_file(1)
+    #download_file(2)
     #download_file(3)
     #remove_file(1, 1)
     #remove_file(2, 2)
