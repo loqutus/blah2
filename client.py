@@ -41,7 +41,6 @@ else:
     debug('URL_STOP: ' + URL_STOP)
 
 
-
 def md5():
     debug('md5')
     with open(FILE, 'rb') as file:
@@ -52,22 +51,23 @@ def md5():
 
 
 def upload():
-    debug('upload')
-    debug(FILE)
+    debug('upload ' + FILE)
     if os.path.isfile(FILE):
         if info() == 0:
             debug('file exists on server, exiting...')
-            exit(1)
+            return 1
+        else:
+            debug('file is not found on server')
         data = open(FILE, 'rb').read()
         headers = {'content-type': 'application/bin', 'md5': md5(), 'client': '1'}
-        debug('upload file:' + str(FILENAME))
-        debug('upload headers:' + str(headers))
-        debug('upload_url:' + URL_UPLOAD)
+        debug('upload file: ' + str(FILENAME))
+        debug('upload headers :' + str(headers))
+        debug('upload_url: ' + URL_UPLOAD)
         try:
             r = requests.post(URL_UPLOAD, data, headers=headers, timeout=TIMEOUT)
         except requests.exceptions.Timeout:
             debug('upload timeout, exiting...')
-            exit(1)
+            return 1
         if r.status_code == 200:
             debug('upload succeeded')
             return 0
@@ -86,7 +86,6 @@ def info():
     except requests.exceptions.Timeout:
         debug('info timeout, exiting...')
         return 1
-    # debug(str(r.content.decode('ascii')))
 
     if r.status_code == 200:
         debug('OK')

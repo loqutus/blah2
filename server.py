@@ -15,9 +15,6 @@ import tornado.httputil
 import settings
 from settings import TIMEOUT
 
-
-global file_read
-
 SERVER_ID = sys.argv[1]
 
 if SERVER_ID == '1':
@@ -151,9 +148,9 @@ class DownloadHandler(tornado.web.RequestHandler):
                 self.set_header('md5', md5)
                 debug('md5 correct')
                 self.set_status(200)
-                debug(filename + '.md5: ' + md5 + ' DownloadHandler exit')
-                #()
-                return 0
+                debug(filename + '.md5: ' + md5)
+                debug('DownloadHandler exit')
+
             else:
                 debug('md5 error')
                 debug('asking other HOSTS')
@@ -162,16 +159,12 @@ class DownloadHandler(tornado.web.RequestHandler):
                     if ask_host(filename, 1) == 1:
                         if not download(filename, 1):
                             print('file downloaded from host 1')
-                            return 0
                     elif ask_host(filename, 1) == 1:
                         if not download(filename, 2):
                             print('file downloaded from host 2')
-                            return 0
                     else:
                         debug('cannot find file on all servers...')
                         self.set_status(500)
-
-                        return 1
 
         else:
             debug('asking other HOSTS')
@@ -179,20 +172,15 @@ class DownloadHandler(tornado.web.RequestHandler):
             if client == '1':
                 if ask_host(filename, 1) == 1:
                     download(filename, 1)
-                    return 0
                 elif ask_host(filename, 1) == 1:
                     download(filename, 2)
-                    return 0
                 else:
                     debug('cannot find file on all servers...')
                     self.set_status(500)
-                    return 1
 
             else:
                 debug('not a client, cannot find file')
-
-                return 1
-                #debug('DownloadHandler finish')
+        debug('DownloadHandler finish')
 
 
 class UploadHandler(tornado.web.RequestHandler):

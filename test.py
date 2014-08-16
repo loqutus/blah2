@@ -5,13 +5,22 @@ from settings import *
 import ipdb
 import time
 import hashlib
+from time import sleep
 
 
 def md5(filename):
-    with open(filename, 'rb') as file:
-        data = file.read()
-        md5_sum = hashlib.md5(data).hexdigest()
-        return md5_sum
+    """Calculating md5 sum of a file
+
+    :param filename: name of file
+    :return: md5sum of file
+    """
+    if os.path.exists(filename):
+        with open(filename, 'rb') as file:
+            data = file.read()
+            md5_sum = hashlib.md5(data).hexdigest()
+            return md5_sum
+    else:
+        return 1
 
 
 def kill_server():
@@ -20,17 +29,11 @@ def kill_server():
     """
     print('kill_server')
     print('killing server 1')
-    cmd1 = './client.py stop ' + HOST1 + ':' + str(PORT1)
-    print(cmd1)
-    os.system(cmd1)
+    os.system('./client.py stop ' + HOST1 + ':' + PORT1)
     print('killing server 2')
-    cmd2 = './client.py stop ' + HOST2 + ':' + str(PORT2)
-    print(cmd2)
-    os.system(cmd2)
+    os.system('./client.py stop ' + HOST2 + ':' + PORT2)
     print('killing server 3')
-    cmd3 = './client.py stop ' + HOST3 + ':' + str(PORT3)
-    print(cmd3)
-    os.system(cmd3)
+    os.system('./client.py stop ' + HOST3 + ':' + PORT3)
     print('all servers killed')
 
 
@@ -48,8 +51,7 @@ def kill_client():
 def rm_files():
     """Removing existings data files, and logs
     """
-    print('rm_files')
-    print(os.getcwd())
+    print('rm_files ' + os.getcwd())
     for f in glob.glob(os.getcwd() + '/data*/*'):
         os.remove(f)
     for f in glob.glob(os.getcwd() + '/download/*'):
@@ -59,7 +61,7 @@ def rm_files():
     if os.path.isfile('server2.log'):
         os.remove('server2.log')
     if os.path.isfile('server3.log'):
-         os.remove('server3.log')
+        os.remove('server3.log')
     if os.path.isfile('client.log'):
         os.remove('client.log')
     print('files removed')
@@ -75,79 +77,59 @@ def start_server(server_id):
     os.system('./server.py ' + str(server_id) + ' &')
 
 
-def upload_file(host):
+def upload_file(hostname):
     """Uploading test files
 
-    :param file: file to upload
     :param host: host to upload
     """
     print('upload_file')
-    if host == 1:
-        hostname = HOST1 + ':' + str(PORT1)
-    elif host == 2:
-        hostname = HOST2 + ':' + str(PORT2)
-    elif host == 3:
-        hostname = HOST3 + ':' + str(PORT3)
     for file in os.listdir(TEST_FILES_DIR):
         print('./client.py upload ' + TEST_FILES_DIR + str(file) + ' ' + hostname)
         os.system('./client.py upload ' + TEST_FILES_DIR + str(file) + ' ' + hostname)
 
 
-def download_file(host):
+def download_file(hostname, directory):
     """Downloading test files
 
-    :param file: downloading file
     :param host: downloading host
     """
-    if host == 1:
-        directory = DIR1
-    elif host == 2:
-        directory = DIR2
-    elif host == 3:
-        directory = DIR3
     print('download_file')
-    if host == 1:
-        hostname = HOST1 + ':' + str(PORT1)
-    elif host == 2:
-        hostname = HOST2 + ':' + str(PORT2)
-    elif host == 3:
-        hostname = HOST3 + ':' + str(PORT3)
     os.chdir(DOWNLOAD_DIR)
     for file in os.listdir(TEST_FILES_DIR):
-        print('./client.py download ' + str(file) + ' ' + hostname)
-        os.system('../client.py download ' + str(file) + ' ' + hostname)
-    file_path = directory + str(file)
-    file_txt_path = directory + str(file) + '.md5'
-    if os.path.exists(file_path) and os.path.exists(file_txt_path):
-        if md5(directory + file) == \
-                md5(DOWNLOAD_DIR + file):
-            print('md5 OK')
+        #sleep(1)
+        print('../client.py download ' + file + ' ' + hostname)
+        os.system('../client.py download ' + file + ' ' + hostname)
+        file_path = directory + str(file)
+        file_txt_path = directory + str(file) + '.md5'
+        file_txt_path_file = open(file_txt_path, 'r')
+        md5_1 = str(file_txt_path_file.read())
+        md5_2 = md5(directory + file)
+        md5_3 = md5(DOWNLOAD_DIR + file)
+        print(md5_1)
+        print(md5_2)
+        print(md5_3)
+        print(file_path)
+        if os.path.exists(DOWNLOAD_DIR + file):
+            if md5_1 == md5_2 == md5_3:
+                print('md5 OK')
+            else:
+                print('md5 FAILED')
         else:
-            print('md5 FAILED')
-    else:
-        print('file is not downloaded')
+            print('file is not downloaded')
+        #sleep(1)
 
 
-def remove_file(file, host):
+def remove_file(hostname, directory, filename):
     """Removing test files
 
     :param file: removing file
     :param host: removing host
     """
     print('remove_file')
-    if host == 1:
-        hostname = HOST1 + ':' + str(PORT1)
-        directory = DIR1
-    elif host == 2:
-        hostname = HOST2 + ':' + str(PORT2)
-        directory = DIR2
-    elif host == 3:
-        hostname = HOST3 + ':' + str(PORT3)
-        directory = DIR3
-    print('./client.py remove ' + str(file) + '.bin ' + hostname)
-    os.system('../client.py remove ' + str(file) + '.bin ' + hostname)
-    if os.path.isfile(directory + str(file) + '.bin') == False \
-            and os.path.isfile(directory + str(file) + '.bin.txt') == False:
+    print('./client.py remove ' + filename + hostname)
+    os.system('../client.py remove ' + filename + ' ' + hostname)
+    if os.path.isfile(directory + filename) == False \
+            and os.path.isfile(directory + filename) == False:
         print('file removed')
         return 0
     else:
@@ -155,16 +137,15 @@ def remove_file(file, host):
         return 1
 
 
-def rm_file_from_fs(file, dir_id):
-    if dir_id == 1:
-        directory = DIR1
-    elif dir_id == 2:
-        directory = DIR2
-    elif dir_id == 3:
-        directory = DIR3
-    print('rm_file ' + directory + ' ' + str(file) + '.bin')
-    file_path = directory + str(file) + '.bin'
-    file_txt_path = directory + str(file) + '.bin.txt'
+def rm_file_from_fs(file, directory):
+    """Removing file from filesystem
+
+    :param file: file to remove
+    :param dir_id: directory id
+    """
+    print('rm_file ' + directory + ' ' + file)
+    file_path = directory + file
+    file_txt_path = directory + file
     if os.path.exists(file_path):
         os.remove(file_path)
     if os.path.exists(file_txt_path):
@@ -179,15 +160,15 @@ if __name__ == '__main__':
     start_server(1)
     start_server(2)
     start_server(3)
-    time.sleep(2)
-    upload_file(1)
-    #upload_file(2)
-    #upload_file(3)
-    #rm_file_from_fs(1, 1)
-    #download_file(1)
-    #download_file(2)
-    #download_file(3)
-    #remove_file(1, 1)
-    #remove_file(2, 2)
-    #remove_file(3, 3)
+    sleep(4)
+    upload_file(HOST1 + ':' + PORT1)
+    upload_file(HOST2 + ':' + PORT2)
+    upload_file(HOST3 + ':' + PORT3)
+    # rm_file_from_fs('1.bin', DIR1)
+    download_file(HOST1 + ':' + PORT1, DIR1)
+    # download_file(HOST1 + ':' + PORT2,DIR2)
+    # download_file(HOST1 + ':' + PORT3,DIR3)
+    # remove_file(HOST1 + ':' + PORT1, DIR1, '1.bin')
+    #remove_file(HOST1 + ':' + PORT2, DIR2, '2.bin')
+    #remove_file(HOST1 + ':' + PORT3, DIR3, '3.bin')
     print('exiting...')
