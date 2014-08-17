@@ -54,6 +54,12 @@ debug('starting server ' + HOST + ':' + str(PORT))
 
 
 def ask_host(filename, host):
+    """Ask host about files
+
+    :param filename: filename to ask
+    :param host: host to ask
+    :return 0 if ok, 1 if fails
+    """
     debug('ask_host')
     if host == 1:
         host = HOST1
@@ -75,6 +81,13 @@ def ask_host(filename, host):
 
 
 def upload(filename, content, md5, host_id):
+    """Upload files to host
+
+    :param filename: filename to upload
+    :param content: content of file to upload
+    :param md5: md5 of file to upload
+    :param host_id: host id to upload
+    """
     debug('upload')
     if host_id == 1:
         host = HOST1
@@ -97,6 +110,12 @@ def upload(filename, content, md5, host_id):
 
 
 def download(filename, host_id):
+    """Download file from host
+
+    :param filename: filename to download
+    :param host_id: host id to download
+    :return: 0 if ok, 1 if fails
+    """
     debug('download')
     if host_id == 1:
         host = HOST1
@@ -125,6 +144,11 @@ def download(filename, host_id):
 
 
 def md5sum(filename):
+    """Calculate md5 of file
+
+    :param filename: filename to calculate md5
+    :return: md5sum of file
+    """
     debug('md5sum')
     with open(filename, 'rb') as file:
         data = file.read()
@@ -135,9 +159,14 @@ def md5sum(filename):
 
 class DownloadHandler(tornado.web.RequestHandler):
     def get(self, filename):
+        """Handle a '/download/' url
+
+        :param filename: filename get to the client
+        """
         # ipdb.set_trace()
         debug('DownloadHandler')
         if os.path.isfile(DIR + filename):
+            debug('file exists')
             f_md5 = open(DIR + filename + '.md5', 'r')
             md5 = f_md5.read()
             if md5sum(DIR + filename) == md5:
@@ -152,8 +181,7 @@ class DownloadHandler(tornado.web.RequestHandler):
                 debug('DownloadHandler exit')
 
             else:
-                debug('md5 error')
-                debug('asking other HOSTS')
+                debug('md5 error, asking other HOSTS')
                 client = self.request.headers.get('client')
                 if client == '1':
                     if ask_host(filename, 1) == 1:
@@ -167,7 +195,7 @@ class DownloadHandler(tornado.web.RequestHandler):
                         self.set_status(500)
 
         else:
-            debug('asking other HOSTS')
+            debug('file does not exist, asking other HOSTS')
             client = self.request.headers.get('client')
             if client == '1':
                 if ask_host(filename, 1) == 1:
@@ -185,6 +213,10 @@ class DownloadHandler(tornado.web.RequestHandler):
 
 class UploadHandler(tornado.web.RequestHandler):
     def post(self, filename):
+        """Handler of /upload/
+
+        :param filename: filename to upload
+        """
         debug('UploadHandler')
         file = DIR + filename
         md5 = self.request.headers.get('md5')
@@ -195,16 +227,18 @@ class UploadHandler(tornado.web.RequestHandler):
         if os.path.exists(file):
             debug('file exists')
             if md5 == md5sum(file):
-                debug('requested file is the same, as uploading.exit...')
+                debug('uploaded file is the same, as existing, exiting...')
 
         else:
+            debug('file does not exists, writing...')
             with open(file, 'wb') as f:
                 f.write(self.request.body)
-                f.close()
 
         if md5 == md5sum(file):
+            debug('md5 correct')
             m = open(file + '.md5', 'w')
             m.write(md5)
+            m.close()
             debug('ask_host1: ')
             debug('ask_host2: ')
             debug('client: ' + str(client))
@@ -256,7 +290,6 @@ class InfoHandler(tornado.web.RequestHandler):
         filepath = DIR + filename
         debug(filepath)
         if os.path.isfile(filepath):
-            isfile = 1
             debug('isfile')
             file_md5 = open(filepath + '.md5', 'r')
             file_md5_data = file_md5.read()

@@ -3,7 +3,6 @@ import os
 import glob
 from settings import *
 import ipdb
-import time
 import hashlib
 from time import sleep
 
@@ -80,7 +79,7 @@ def start_server(server_id):
 def upload_file(hostname):
     """Uploading test files
 
-    :param host: host to upload
+    :param hostname: host to upload
     """
     print('upload_file')
     for file in os.listdir(TEST_FILES_DIR):
@@ -91,12 +90,13 @@ def upload_file(hostname):
 def download_file(hostname, directory):
     """Downloading test files
 
-    :param host: downloading host
+    :param hostname: downloading host
+    :param directory: checking dir
     """
     print('download_file')
     os.chdir(DOWNLOAD_DIR)
     for file in os.listdir(TEST_FILES_DIR):
-        #sleep(1)
+        # sleep(1)
         print('../client.py download ' + file + ' ' + hostname)
         os.system('../client.py download ' + file + ' ' + hostname)
         file_path = directory + str(file)
@@ -105,10 +105,13 @@ def download_file(hostname, directory):
         md5_1 = str(file_txt_path_file.read())
         md5_2 = md5(directory + file)
         md5_3 = md5(DOWNLOAD_DIR + file)
-        print(md5_1)
-        print(md5_2)
-        print(md5_3)
         print(file_path)
+        if str(md5_1) == str(md5_2) == str(md5_3):
+            print('md5 OK')
+        else:
+            print('md5 in .md5 file: ' + str(md5_1))
+            print('md5 of file: ' + str(md5_2))
+            print('md5 of downloaded file: ' + str(md5_3))
         if os.path.exists(DOWNLOAD_DIR + file):
             if md5_1 == md5_2 == md5_3:
                 print('md5 OK')
@@ -116,20 +119,21 @@ def download_file(hostname, directory):
                 print('md5 FAILED')
         else:
             print('file is not downloaded')
-        #sleep(1)
+            # sleep(1)
 
 
 def remove_file(hostname, directory, filename):
-    """Removing test files
+    """Removing test file
 
-    :param file: removing file
-    :param host: removing host
+    :param filename: removing file
+    :param directory: directory to check if file is removed
+    :param hostname: removing host
     """
     print('remove_file')
-    print('./client.py remove ' + filename + hostname)
+    print('./client.py remove ' + filename + ' ' + hostname)
     os.system('../client.py remove ' + filename + ' ' + hostname)
-    if os.path.isfile(directory + filename) == False \
-            and os.path.isfile(directory + filename) == False:
+    if not os.path.isfile(directory + filename) and\
+            not os.path.isfile(directory + filename):
         print('file removed')
         return 0
     else:
@@ -141,11 +145,11 @@ def rm_file_from_fs(file, directory):
     """Removing file from filesystem
 
     :param file: file to remove
-    :param dir_id: directory id
+    :param directory: directory id
     """
     print('rm_file ' + directory + ' ' + file)
     file_path = directory + file
-    file_txt_path = directory + file
+    file_txt_path = directory + file + '.md5'
     if os.path.exists(file_path):
         os.remove(file_path)
     if os.path.exists(file_txt_path):
@@ -164,11 +168,17 @@ if __name__ == '__main__':
     upload_file(HOST1 + ':' + PORT1)
     upload_file(HOST2 + ':' + PORT2)
     upload_file(HOST3 + ':' + PORT3)
-    # rm_file_from_fs('1.bin', DIR1)
+    rm_file_from_fs('1.bin', DIR1)
     download_file(HOST1 + ':' + PORT1, DIR1)
-    # download_file(HOST1 + ':' + PORT2,DIR2)
-    # download_file(HOST1 + ':' + PORT3,DIR3)
-    # remove_file(HOST1 + ':' + PORT1, DIR1, '1.bin')
-    #remove_file(HOST1 + ':' + PORT2, DIR2, '2.bin')
-    #remove_file(HOST1 + ':' + PORT3, DIR3, '3.bin')
+    download_file(HOST1 + ':' + PORT2, DIR2)
+    download_file(HOST1 + ':' + PORT3, DIR3)
+    rm_file_from_fs('1.bin', DIR1)
+    rm_file_from_fs('1.bin', DIR2)
+    rm_file_from_fs('1.bin', DIR3)
+    download_file(HOST1 + ':' + PORT1, DIR1)
+    download_file(HOST1 + ':' + PORT2, DIR2)
+    download_file(HOST1 + ':' + PORT3, DIR3)
+    remove_file(HOST1 + ':' + PORT1, DIR1, '1')
+    remove_file(HOST1 + ':' + PORT2, DIR2, '2')
+    remove_file(HOST1 + ':' + PORT3, DIR3, '3')
     print('exiting...')
