@@ -13,7 +13,6 @@ import tornado.web
 import tornado.httputil
 
 import settings
-from settings import TIMEOUT
 
 SERVER_ID = sys.argv[1]
 
@@ -22,6 +21,9 @@ if SERVER_ID == '1':
     HOST2 = settings.HOST3
     PORT1 = settings.PORT2
     PORT2 = settings.PORT3
+    HASH_DIR1 = settings.HASH_DIR2
+    HASH_DIR2 = settings.HASH_DIR3
+    HASH_DIR = settings.HASH_DIR1
     HOST = settings.HOST1
     PORT = settings.PORT1
     DIR = settings.DIR1
@@ -31,6 +33,9 @@ elif SERVER_ID == '2':
     HOST2 = settings.HOST3
     PORT1 = settings.PORT1
     PORT2 = settings.PORT3
+    HASH_DIR1 = settings.HASH_DIR1
+    HASH_DIR2 = settings.HASH_DIR3
+    HASH_DIR = settings.HASH_DIR2
     HOST = settings.HOST2
     PORT = settings.PORT2
     DIR = settings.DIR2
@@ -40,6 +45,9 @@ elif SERVER_ID == '3':
     HOST2 = settings.HOST2
     PORT1 = settings.PORT1
     PORT2 = settings.PORT2
+    HASH_DIR1 = settings.HASH_DIR1
+    HASH_DIR2 = settings.HASH_DIR2
+    HASH_DIR = settings.HASH_DIR3
     HOST = settings.HOST3
     PORT = settings.PORT3
     DIR = settings.DIR3
@@ -70,7 +78,7 @@ def ask_host(filename, host):
         port = PORT2
         debug('ask_HOST2')
     url = 'http://' + host + ':' + str(port) + '/info/' + filename
-    request_response = requests.get(url, timeout=TIMEOUT)
+    request_response = requests.get(url, timeout=settings.TIMEOUT)
     debug('request_response: ' + str(request_response.status_code))
     if request_response.status_code == 200:
         return 0
@@ -100,7 +108,7 @@ def upload(filename, content, md5, host_id):
     url_upload = 'http://' + host + ':' + str(port) + '/upload/' + filename
     debug('upload: ' + url_upload)
     debug('upload headers: ' + str(headers))
-    r = requests.post(url_upload, content, headers=headers, timeout=TIMEOUT)
+    r = requests.post(url_upload, content, headers=headers, timeout=settings.TIMEOUT)
     debug('upload: ' + str(r.status_code))
     if r.status_code == 200:
         debug('upload OK')
@@ -123,10 +131,10 @@ def download(filename, host_id):
     elif host_id == 2:
         host = HOST2
         port = PORT2
-    header = {'client': '1'}
+    header = {'client': '0'}
     url_download = 'http://' + HOST + ':' + str(PORT) + '/download/' + filename
     try:
-        r = requests.get(url_download, headers=header, timeout=TIMEOUT)
+        r = requests.get(url_download, headers=header, timeout=settings.TIMEOUT)
     except requests.exceptions.Timeout:
         debug('download timeout')
         return 1
@@ -143,7 +151,7 @@ def download(filename, host_id):
         return 1
 
 
-def md5sum(filename):
+def md5sum(filename, block_size=2 ** 20):
     """Calculate md5 of file
 
     :param filename: filename to calculate md5
@@ -151,8 +159,13 @@ def md5sum(filename):
     """
     debug('md5sum')
     with open(filename, 'rb') as file:
-        data = file.read()
-    md5_sum = hashlib.md5(data).hexdigest()
+        md5 = hashlib.md5()
+        while True:
+            data = file.read(block_size)
+            if not data:
+                break
+            md5.update(data)
+    md5_sum = md5.hexdigest()
     debug('md5sum: ' + str(md5_sum))
     return md5_sum
 
@@ -167,7 +180,7 @@ class DownloadHandler(tornado.web.RequestHandler):
         debug('DownloadHandler')
         if os.path.isfile(DIR + filename):
             debug('file exists')
-            f_md5 = open(DIR + filename + '.md5', 'r')
+            f_md5 = open(HASH_DIR + filename + '.md5', 'r')
             md5 = f_md5.read()
             if md5sum(DIR + filename) == md5:
                 with open(DIR + filename, 'rb') as f:
@@ -219,6 +232,7 @@ class UploadHandler(tornado.web.RequestHandler):
         """
         debug('UploadHandler')
         file = DIR + filename
+        md5_file=HASH_DIR+filename
         md5 = self.request.headers.get('md5')
         client = self.request.headers.get('client')
         debug('Client: ' + str(client))
@@ -236,7 +250,7 @@ class UploadHandler(tornado.web.RequestHandler):
 
         if md5 == md5sum(file):
             debug('md5 correct')
-            m = open(file + '.md5', 'w')
+            m = open(md5_file + '.md5', 'w')
             m.write(md5)
             m.close()
             debug('ask_host1: ')
@@ -259,13 +273,18 @@ class UploadHandler(tornado.web.RequestHandler):
 
 class RemoveHandler(tornado.web.RequestHandler):
     def get(self, filename):
+        """/remove handler
+
+        :param filename: filename to remove
+        """
         debug('RemoveHandler')
         filepath = DIR + filename
+        md5_filepath=HASH_DIR+filename+'.md5'
         if os.path.isfile(filepath):
             os.remove(filepath)
             debug('REMOVE ' + filepath)
-        if os.path.isfile(filepath + '.md5'):
-            os.remove(filepath + '.md5')
+        if os.path.isfile(md5_filepath):
+            os.remove(md5_filepath)
             debug('REMOVE ' + filepath)
         else:
             self.write(filename + 'file not found')
@@ -277,21 +296,26 @@ class RemoveHandler(tornado.web.RequestHandler):
             if ask_host(filename, 1) == 0:
                 debug('remove1')
                 headers = {'client': '0'}
-                r = requests.get(URL_REMOVE1, headers=headers, timeout=TIMEOUT)
+                r = requests.get(URL_REMOVE1, headers=headers, timeout=settings.TIMEOUT)
             if ask_host(filename, 2) == 0:
                 debug('remove2')
                 headers = {'client': '0'}
-                r = requests.get(URL_REMOVE2, headers=headers, timeout=TIMEOUT)
+                r = requests.get(URL_REMOVE2, headers=headers, timeout=settings.TIMEOUT)
 
 
 class InfoHandler(tornado.web.RequestHandler):
     def get(self, filename):
+        """/info handler
+
+        :param filename: filename to remove
+        """
         debug('InfoHandler')
         filepath = DIR + filename
+        md5_filepath=HASH_DIR+filename+'.md5'
         debug(filepath)
         if os.path.isfile(filepath):
             debug('isfile')
-            file_md5 = open(filepath + '.md5', 'r')
+            file_md5 = open(md5_filepath, 'r')
             file_md5_data = file_md5.read()
             if file_md5_data == md5sum(filepath):
                 debug('ok')
@@ -312,6 +336,9 @@ class InfoHandler(tornado.web.RequestHandler):
 
 class StopHandler(tornado.web.RequestHandler):
     def get(self):
+        """/stop handler
+
+        """
         debug('exiting...')
         tornado.ioloop.IOLoop.instance().stop()
 

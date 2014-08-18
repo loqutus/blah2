@@ -41,13 +41,23 @@ else:
     debug('URL_STOP: ' + URL_STOP)
 
 
-def md5():
-    debug('md5')
-    with open(FILE, 'rb') as file:
-        data = file.read()
-        md5_sum = hashlib.md5(data).hexdigest()
-        debug(md5_sum)
-        return md5_sum
+def md5(filename, block_size=2 ** 20):
+    """Calculate md5 of file
+
+    :param filename: filename to calculate md5
+    :return: md5sum of file
+    """
+    debug('md5sum')
+    with open(filename, 'rb') as file:
+        md5 = hashlib.md5()
+        while True:
+            data = file.read(block_size)
+            if not data:
+                break
+            md5.update(data)
+    md5_sum = md5.hexdigest()
+    debug('md5sum: ' + str(md5_sum))
+    return md5_sum
 
 
 def upload():
@@ -59,7 +69,7 @@ def upload():
         else:
             debug('file is not found on server')
         data = open(FILE, 'rb').read()
-        headers = {'content-type': 'application/bin', 'md5': md5(), 'client': '1'}
+        headers = {'content-type': 'application/bin', 'md5': md5(FILE), 'client': '1'}
         debug('upload file: ' + str(FILENAME))
         debug('upload headers :' + str(headers))
         debug('upload_url: ' + URL_UPLOAD)
@@ -115,7 +125,7 @@ def download():
         debug('ERROR ' + str(r.status_code))
         exit(1)
     debug('headers: ' + str(r.headers))
-    if r.headers['md5'] == md5():
+    if r.headers['md5'] == md5(FILE):
         debug('OK')
         exit(0)
 

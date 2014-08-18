@@ -53,6 +53,8 @@ def rm_files():
     print('rm_files ' + os.getcwd())
     for f in glob.glob(os.getcwd() + '/data*/*'):
         os.remove(f)
+    for f in glob.glob(os.getcwd() + '/hash_data*/*'):
+        os.remove(f)
     for f in glob.glob(os.getcwd() + '/download/*'):
         os.remove(f)
     if os.path.isfile('server1.log'):
@@ -87,11 +89,12 @@ def upload_file(hostname):
         os.system('./client.py upload ' + TEST_FILES_DIR + str(file) + ' ' + hostname)
 
 
-def download_file(hostname, directory):
+def download_file(hostname, directory, md5_directory):
     """Downloading test files
 
     :param hostname: downloading host
     :param directory: checking dir
+    :param md5_directory: directory with md5 files
     """
     print('download_file')
     os.chdir(DOWNLOAD_DIR)
@@ -100,9 +103,12 @@ def download_file(hostname, directory):
         print('../client.py download ' + file + ' ' + hostname)
         os.system('../client.py download ' + file + ' ' + hostname)
         file_path = directory + str(file)
-        file_txt_path = directory + str(file) + '.md5'
-        file_txt_path_file = open(file_txt_path, 'r')
-        md5_1 = str(file_txt_path_file.read())
+        file_txt_path = md5_directory + str(file) + '.md5'
+        if os.path.exists(file_txt_path):
+            file_txt_path_file = open(file_txt_path, 'r')
+            md5_1 = str(file_txt_path_file.read())
+        else:
+            md5_1 = '0'
         md5_2 = md5(directory + file)
         md5_3 = md5(DOWNLOAD_DIR + file)
         print(file_path)
@@ -132,7 +138,7 @@ def remove_file(hostname, directory, filename):
     print('remove_file')
     print('./client.py remove ' + filename + ' ' + hostname)
     os.system('../client.py remove ' + filename + ' ' + hostname)
-    if not os.path.isfile(directory + filename) and\
+    if not os.path.isfile(directory + filename) and \
             not os.path.isfile(directory + filename):
         print('file removed')
         return 0
@@ -141,19 +147,21 @@ def remove_file(hostname, directory, filename):
         return 1
 
 
-def rm_file_from_fs(file, directory):
+def rm_file_from_fs(file, directory, md5_directory=''):
     """Removing file from filesystem
 
     :param file: file to remove
-    :param directory: directory id
+    :param directory: directory with files
+    :param md5_directory: directory with md5 files
     """
-    print('rm_file ' + directory + ' ' + file)
+    print('rm_file ' + directory + file)
     file_path = directory + file
-    file_txt_path = directory + file + '.md5'
     if os.path.exists(file_path):
         os.remove(file_path)
-    if os.path.exists(file_txt_path):
-        os.remove(file_txt_path)
+    if md5_directory == '':
+        file_txt_path = md5_directory + file + '.md5'
+        if os.path.exists(file_txt_path):
+            os.remove(file_txt_path)
 
 
 if __name__ == '__main__':
@@ -164,21 +172,21 @@ if __name__ == '__main__':
     start_server(1)
     start_server(2)
     start_server(3)
-    sleep(4)
+    sleep(2)
     upload_file(HOST1 + ':' + PORT1)
     upload_file(HOST2 + ':' + PORT2)
     upload_file(HOST3 + ':' + PORT3)
-    rm_file_from_fs('1.bin', DIR1)
-    download_file(HOST1 + ':' + PORT1, DIR1)
-    download_file(HOST1 + ':' + PORT2, DIR2)
-    download_file(HOST1 + ':' + PORT3, DIR3)
-    rm_file_from_fs('1.bin', DIR1)
-    rm_file_from_fs('1.bin', DIR2)
-    rm_file_from_fs('1.bin', DIR3)
-    download_file(HOST1 + ':' + PORT1, DIR1)
-    download_file(HOST1 + ':' + PORT2, DIR2)
-    download_file(HOST1 + ':' + PORT3, DIR3)
-    remove_file(HOST1 + ':' + PORT1, DIR1, '1')
+    rm_file_from_fs('1', DIR1, HASH_DIR1)
+    download_file(HOST1 + ':' + PORT1, DIR1, HASH_DIR1)
+    download_file(HOST1 + ':' + PORT2, DIR2, HASH_DIR2)
+    download_file(HOST1 + ':' + PORT3, DIR3, HASH_DIR3)
+    rm_file_from_fs('1', DIR1, HASH_DIR1)
+    rm_file_from_fs('1', DIR2, HASH_DIR2)
+    rm_file_from_fs('1', DIR3, HASH_DIR3)
+    rm_file_from_fs('1', DOWNLOAD_DIR)
+    download_file(HOST1 + ':' + PORT1, DIR1, HASH_DIR1)
+    download_file(HOST1 + ':' + PORT2, DIR2, HASH_DIR2)
+    download_file(HOST1 + ':' + PORT3, DIR3, HASH_DIR3)
     remove_file(HOST1 + ':' + PORT2, DIR2, '2')
     remove_file(HOST1 + ':' + PORT3, DIR3, '3')
     print('exiting...')
