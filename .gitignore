@@ -1,5 +1,5 @@
 *.bin
-.idea
+.idea/
 *.log
 data1/*
 data2/*
