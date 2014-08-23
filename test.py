@@ -158,7 +158,7 @@ def rm_file_from_fs(file, directory, md5_directory=''):
     file_path = directory + file
     if os.path.exists(file_path):
         os.remove(file_path)
-    if md5_directory == '':
+    if md5_directory != '':
         file_txt_path = md5_directory + file + '.md5'
         if os.path.exists(file_txt_path):
             os.remove(file_txt_path)
@@ -174,19 +174,19 @@ if __name__ == '__main__':
     start_server(3)
     sleep(2)
     upload_file(HOST1 + ':' + PORT1)
-    upload_file(HOST2 + ':' + PORT2)
-    upload_file(HOST3 + ':' + PORT3)
+    #upload_file(HOST2 + ':' + PORT2)
+    #upload_file(HOST3 + ':' + PORT3)
     rm_file_from_fs('1', DIR1, HASH_DIR1)
     download_file(HOST1 + ':' + PORT1, DIR1, HASH_DIR1)
-    download_file(HOST1 + ':' + PORT2, DIR2, HASH_DIR2)
-    download_file(HOST1 + ':' + PORT3, DIR3, HASH_DIR3)
-    rm_file_from_fs('1', DIR1, HASH_DIR1)
-    rm_file_from_fs('1', DIR2, HASH_DIR2)
-    rm_file_from_fs('1', DIR3, HASH_DIR3)
-    rm_file_from_fs('1', DOWNLOAD_DIR)
+    #download_file(HOST1 + ':' + PORT2, DIR2, HASH_DIR2)
+    #download_file(HOST1 + ':' + PORT3, DIR3, HASH_DIR3)
+    #rm_file_from_fs('1', DIR1, HASH_DIR1)
+    #rm_file_from_fs('1', DIR2, HASH_DIR2)
+    #rm_file_from_fs('1', DIR3, HASH_DIR3)
+    #rm_file_from_fs('1', DOWNLOAD_DIR)
     download_file(HOST1 + ':' + PORT1, DIR1, HASH_DIR1)
-    download_file(HOST1 + ':' + PORT2, DIR2, HASH_DIR2)
-    download_file(HOST1 + ':' + PORT3, DIR3, HASH_DIR3)
-    remove_file(HOST1 + ':' + PORT2, DIR2, '2')
-    remove_file(HOST1 + ':' + PORT3, DIR3, '3')
+    #download_file(HOST1 + ':' + PORT2, DIR2, HASH_DIR2)
+    #download_file(HOST1 + ':' + PORT3, DIR3, HASH_DIR3)
+    #remove_file(HOST1 + ':' + PORT2, DIR2, '2')
+    #remove_file(HOST1 + ':' + PORT3, DIR3, '3')
     print('exiting...')
