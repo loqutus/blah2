@@ -184,7 +184,7 @@ if __name__ == '__main__':
     #rm_file_from_fs('1', DIR2, HASH_DIR2)
     #rm_file_from_fs('1', DIR3, HASH_DIR3)
     #rm_file_from_fs('1', DOWNLOAD_DIR)
-    download_file(HOST1 + ':' + PORT1, DIR1, HASH_DIR1)
+    #download_file(HOST1 + ':' + PORT1, DIR1, HASH_DIR1)
     #download_file(HOST1 + ':' + PORT2, DIR2, HASH_DIR2)
     #download_file(HOST1 + ':' + PORT3, DIR3, HASH_DIR3)
     #remove_file(HOST1 + ':' + PORT2, DIR2, '2')

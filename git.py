@@ -14,55 +14,88 @@ class Git:
 
     def init(self):
         self.cd()
-        call('git init', shell=True)
-        return 0
+        r = call('git init', shell=True)
+        if r == 0:
+            return 0
+        else:
+            raise Exception('git init failed')
 
     def add(self, filename='*'):
         self.cd()
-        call('git add ' + filename, shell=True)
-        return 0
+        r = call('git add ' + filename, shell=True)
+        if r == 0:
+            return 0
+        else:
+            raise Exception('git add failed')
 
     def commit(self, message='commit'):
         self.cd()
-        call("git commit -m \'" + message + "\'", shell=True)
-        return 0
+        r = call("git commit -m \'" + message + "\'", shell=True)
+        if r == 0:
+            return 0
+        else:
+            raise Exception('git commit failed')
 
     def push(self, repo='origin', branch='master'):
         self.cd()
-        call('git push ' + repo + ' ' + branch, shell=True)
-        return 0
+        r = call('git push ' + repo + ' ' + branch, shell=True)
+        if r == 0:
+            return 0
+        else:
+            raise Exception('git push failed')
 
     def pull(self):
         self.cd()
-        call('git pull', shell=True)
-        return 0
+        r = call('git pull', shell=True)
+        if r == 0:
+            return 0
+        else:
+            raise Exception('git put failed')
 
     def clone(self, url):
         self.cd()
-        call('git clone ' + url, shell=True)
-        return 0
+        r = call('git clone ' + url, shell=True)
+        if r == 0:
+            return 0
+        else:
+            raise Exception('git clone failed')
 
     def rm(self, filename):
         self.cd()
-        call('git rm ' + filename, shell=True)
-        return 0
+        r = call('git rm ' + filename, shell=True)
+        if r == 0:
+            return 0
+        else:
+            raise Exception('git rm failed')
 
     def checkout_to_branch(self, branch='master'):
         self.cd()
-        call('git checkout ' + branch, shell=True)
-        return 0
+        r = call('git checkout ' + branch, shell=True)
+        if r == 0:
+            return 0
+        else:
+            raise Exception('git checkout failed')
 
     def checkout_to_commit(self, commit='', files='.'):
         self.cd()
-        call('git checkout ' + commit + '' + files, shell=True)
-        return 0
+        r = call('git checkout ' + commit + '' + files, shell=True)
+        if r == 0:
+            return 0
+        else:
+            raise Exception('git checkout failed')
 
     def branch(self, branch='master'):
         self.cd()
-        call('git branch ' + branch, shell=True)
-        return 0
+        r = call('git branch ' + branch, shell=True)
+        if r == 0:
+            return 0
+        else:
+            raise Exception('git branch failed')
 
     def merge(self, branch='master'):
         self.cd()
-        call('git merge ' + branch, shell=True)
-        return 0
+        r = call('git merge ' + branch, shell=True)
+        if r == 0:
+            return 0
+        else:
+            raise Exception('git merge failed')

@@ -70,8 +70,14 @@ class Host:
             self.host = HOST2
             self.port = PORT2
 
+    def get_host(self):
+        return self.host
 
-def ask_host(filename, host):
+    def get_port(self):
+        return self.port
+
+
+def ask_host(filename, host_id):
     """Ask host about files
 
     :param filename: filename to ask
@@ -79,8 +85,8 @@ def ask_host(filename, host):
     :return 0 if ok, 1 if fails
     """
     debug('ask_host')
-    host_obj = Host(host)
-    url = 'http://' + host_obj.host + ':' + str(host_obj.port) + '/info/' + filename
+    host_obj = Host(host_id)
+    url = 'http://' + host_obj.get_host() + ':' + host_obj.get_port() + '/info/' + filename
     request_response = requests.get(url, timeout=settings.TIMEOUT)
     debug('request_response: ' + str(request_response.status_code))
     if request_response.status_code == 200:
@@ -102,7 +108,7 @@ def upload(filename, content, md5, host_id):
     debug('upload')
     host_obj = Host(host_id)
     headers = {'content-type': 'application/bin', 'md5': md5, 'client': '0'}
-    url_upload = 'http://' + host_obj.host + ':' + host_obj.port + '/upload/' + filename
+    url_upload = 'http://' + host_obj.get_host() + ':' + host_obj.get_port() + '/upload/' + filename
     debug('upload: ' + url_upload)
     debug('upload headers: ' + str(headers))
     r = requests.post(url_upload, content, headers=headers, timeout=settings.TIMEOUT)
@@ -132,14 +138,14 @@ def download(filename, host_id):
         return 1
     debug(r.status_code)
     if r.status_code == 200 and r.headers.get('md5') == hashlib.md5(r.data).hexdigest():
-        debug('file downloaded from host' + host_obj.host + host_obj.port)
+        debug('file downloaded from host' + host_obj.get_host() + host_obj.get_port())
         file = DIR + filename
         with open(file, 'wb') as f:
             f.write(r.data)
         f.close()
         return 0
     else:
-        debug('downloading ' + filename + ' from host ' + host_obj.host + ' failed')
+        debug('downloading ' + filename + ' from host ' + host_obj.get_host() + ' failed')
         return 1
 
 
@@ -248,13 +254,13 @@ class UploadHandler(tornado.web.RequestHandler):
             debug('ask_host2: ')
             debug('client: ' + str(client))
             if client == '1':
-                if ask_host(filename, 1) == 1:
+                if ask_host(filename, '1') == 1:
                     debug('upload1')
-                    upload(filename, self.request.body, md5, 1)
+                    upload(filename, self.request.body, md5, '1')
                     debug('upload1_finish')
-                if ask_host(filename, 2) == 1:
+                if ask_host(filename, '2') == 1:
                     debug('upload2')
-                    upload(filename, self.request.body, md5, 2)
+                    upload(filename, self.request.body, md5, '2')
                     debug('upload2_finish')
             self.set_status(200, 'OK')
         else:
